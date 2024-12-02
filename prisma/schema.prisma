@@ -54,7 +54,7 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
-  @@map("verification-tokens")
+  @@map("verification_tokens")
 }
 
 model Post {
@@ -123,7 +123,7 @@ model PostCategory {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([postId, categoryId])
-  @@map("post-categories")
+  @@map("post_categories")
 }
 
 model PostTag {
@@ -133,7 +133,7 @@ model PostTag {
   tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([postId, tagId])
-  @@map("post-tags")
+  @@map("post_tags")
 }
 
 model Media {
