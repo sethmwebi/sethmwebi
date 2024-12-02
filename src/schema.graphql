@@ -1,0 +1,143 @@
+type Query {
+  users: [User!]!
+  posts: [Post!]!
+  comments: [Comment!]!
+  categories: [Category!]!
+  tags: [Tag!]!
+  media: [Media!]!
+}
+
+type Mutation {
+  createUser(data: CreateUserInput!): User!
+  createPost(data: CreatePostInput!): Post!
+  createComment(data: CreateCommentInput!): Comment!
+  createCategory(data: CreateCategoryInput!): Category!
+  createTag(data: CreateTagInput!): Tag!
+  createMedia(data: CreateMediaInput!): Media!
+}
+
+type User {
+  id: ID!
+  name: String
+  email: String!
+  emailVerified: String
+  image: String
+  accounts: [Account!]!
+  posts: [Post!]!
+  comments: [Comment!]!
+  likes: [Like!]!
+  media: [Media!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Account {
+  userId: ID!
+  type: String!
+  provider: String!
+  providerAccountId: String!
+  refresh_token: String
+  access_token: String
+  expires_at: Int
+  token_type: String
+  scope: String
+  id_token: String
+  session_state: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type VerificationToken {
+  identifier: String!
+  token: String!
+  expires: String!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  imageUrl: String
+  createdAt: String!
+  updatedAt: String!
+  author: User!
+  comments: [Comment!]!
+  likes: [Like!]!
+  categories: [Category!]!
+  tags: [Tag!]!
+  media: [Media!]!
+}
+
+type Comment {
+  id: ID!
+  content: String!
+  createdAt: String!
+  post: Post!
+  user: User!
+}
+
+type Like {
+  id: ID!
+  createdAt: String!
+  post: Post!
+  user: User!
+}
+
+type Category {
+  id: ID!
+  name: String!
+  slug: String!
+  posts: [Post!]!
+}
+
+type Tag {
+  id: ID!
+  name: String!
+  slug: String!
+  posts: [Post!]!
+}
+
+type Media {
+  id: ID!
+  url: String!
+  type: String!
+  post: Post
+  user: User
+}
+
+input CreateUserInput {
+  name: String
+  email: String!
+  emailVerified: String
+  image: String
+}
+
+input CreatePostInput {
+  title: String!
+  content: String!
+  imageUrl: String
+  authorId: ID!
+}
+
+input CreateCommentInput {
+  content: String!
+  postId: ID!
+  userId: ID!
+}
+
+input CreateCategoryInput {
+  name: String!
+  slug: String!
+}
+
+input CreateTagInput {
+  name: String!
+  slug: String!
+}
+
+input CreateMediaInput {
+  url: String!
+  type: String!
+  postId: ID
+  userId: ID
+}
