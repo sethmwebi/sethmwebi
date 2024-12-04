@@ -1,0 +1,32 @@
+import { PrismaClient, Tag } from "@prisma/client";
+
+export class TagAPI {
+  prisma: PrismaClient;
+  context: any;
+
+  constructor({ prisma }: { prisma: PrismaClient }) {
+    this.prisma = prisma;
+  }
+
+  initialize(config: { context: any }) {
+    this.context = config.context;
+  }
+
+  async getTagById(tagId: string): Promise<Tag | null> {
+    try {
+      return await this.prisma.tag.findUnique({ where: { id: tagId } });
+    } catch (error) {
+      console.error("Error fetching tag by ID:", error);
+      return null;
+    }
+  }
+
+  async getTags(): Promise<Tag[]> {
+    try {
+      return await this.prisma.tag.findMany();
+    } catch (error) {
+      console.log("Error fetching tags: ", error);
+      return [];
+    }
+  }
+}
