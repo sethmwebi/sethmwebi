@@ -1,4 +1,4 @@
-import { Post, PrismaClient, User } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 
 export class UserAPI {
   prisma: PrismaClient;
