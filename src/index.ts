@@ -26,15 +26,32 @@ const typeDefs = gql(
 
 const prisma = new PrismaClient();
 
+interface ContextValue {
+  dataSources: {
+    accountAPI: AccountAPI;
+    categoryAPI: CategoryAPI;
+    commentAPI: CommentAPI;
+    likeAPI: LikeAPI;
+    mediaAPI: MediaAPI;
+    postAPI: PostAPI;
+    postCategoryAPI: PostCategoryAPI;
+    postTagAPI: PostTagAPI;
+    tagAPI: TagAPI;
+    userAPI: UserAPI;
+    verificationAPI: VerificationTokenAPI;
+  };
+}
+
 async function startApolloServer() {
-  const server = new ApolloServer({
+  const server = new ApolloServer<ContextValue>({
     typeDefs,
     resolvers,
   });
   const { url } = await startStandaloneServer(server, {
     context: async ({ req }) => {
+      const { cache } = server;
       return {
-        dataSources: () => ({
+        dataSources: {
           accountAPI: new AccountAPI({ prisma }),
           categoryAPI: new CategoryAPI({ prisma }),
           commentAPI: new CommentAPI({ prisma }),
@@ -46,7 +63,7 @@ async function startApolloServer() {
           tagAPI: new TagAPI({ prisma }),
           userAPI: new UserAPI({ prisma }),
           verificationAPI: new VerificationTokenAPI({ prisma }),
-        }),
+        },
       };
     },
   });
