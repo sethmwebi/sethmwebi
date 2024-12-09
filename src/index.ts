@@ -5,18 +5,22 @@ import { readFileSync } from "fs";
 import path from "path";
 import { resolvers } from "./resolvers";
 import { gql } from "graphql-tag";
-import { AccountAPI } from "./datasources/account";
+
+import {
+  UserAPI,
+  AccountAPI,
+  VerificationTokenAPI,
+  PostAPI,
+  CommentAPI,
+  LikeAPI,
+  CategoryAPI,
+  TagAPI,
+  PostCategoryAPI,
+  PostTagAPI,
+  MediaAPI,
+} from "./datasources";
 import { PrismaClient } from "@prisma/client";
-import { CategoryAPI } from "./datasources/category";
-import { CommentAPI } from "./datasources/comment";
-import { LikeAPI } from "./datasources/like";
-import { MediaAPI } from "./datasources/media";
-import { PostAPI } from "./datasources/post";
-import { PostCategoryAPI } from "./datasources/postCategory";
-import { PostTagAPI } from "./datasources/postTag";
-import { TagAPI } from "./datasources/tag";
-import { UserAPI } from "./datasources/user";
-import { VerificationTokenAPI } from "./datasources/verification";
+import { DataSourceContext } from "./context";
 
 const typeDefs = gql(
   readFileSync(path.resolve(__dirname, "./schema.graphql"), {
@@ -26,24 +30,8 @@ const typeDefs = gql(
 
 const prisma = new PrismaClient();
 
-interface ContextValue {
-  dataSources: {
-    accountAPI: AccountAPI;
-    categoryAPI: CategoryAPI;
-    commentAPI: CommentAPI;
-    likeAPI: LikeAPI;
-    mediaAPI: MediaAPI;
-    postAPI: PostAPI;
-    postCategoryAPI: PostCategoryAPI;
-    postTagAPI: PostTagAPI;
-    tagAPI: TagAPI;
-    userAPI: UserAPI;
-    verificationAPI: VerificationTokenAPI;
-  };
-}
-
 async function startApolloServer() {
-  const server = new ApolloServer<ContextValue>({
+  const server = new ApolloServer<DataSourceContext>({
     typeDefs,
     resolvers,
   });
