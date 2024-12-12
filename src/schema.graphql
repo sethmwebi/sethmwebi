@@ -5,6 +5,7 @@ type Query {
   categories: [Category!]!
   tags: [Tag!]!
   media: [Media!]!
+  me: User
 }
 
 type Mutation {
@@ -14,19 +15,24 @@ type Mutation {
   createCategory(data: CreateCategoryInput!): Category!
   createTag(data: CreateTagInput!): Tag!
   createMedia(data: CreateMediaInput!): Media!
+  register(data: RegisterInput!): AuthPayload!
+  login(data: LoginInput!): AuthPayload
+  loginWithGoogle(accessToken: String!): AuthPayload!
+}
+
+enum Role {
+  ADMIN
+  SUPERADMIN
+  USER
 }
 
 type User {
   id: ID!
   name: String
   email: String!
+  role: Role!
   emailVerified: String
   image: String
-  accounts: [Account!]!
-  posts: [Post!]!
-  comments: [Comment!]!
-  likes: [Like!]!
-  media: [Media!]!
   createdAt: String!
   updatedAt: String!
 }
@@ -103,6 +109,23 @@ type Media {
   type: String!
   post: Post
   user: User
+}
+
+type AuthPayload {
+  token: String!
+  refreshToken: String!
+  user: User!
+}
+
+input RegisterInput {
+  name: String
+  email: String!
+  password: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
 }
 
 input CreateUserInput {

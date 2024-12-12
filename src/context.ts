@@ -1,3 +1,5 @@
+import { KeyValueCache } from "@apollo/utils.keyvaluecache";
+import { PrismaClient } from "@prisma/client";
 import {
   AccountAPI,
   CategoryAPI,
@@ -11,8 +13,12 @@ import {
   UserAPI,
   VerificationTokenAPI,
 } from "./datasources";
+import { User } from "./modules/db";
 
 export interface DataSourceContext {
+  db: PrismaClient;
+  user?: User | null;
+  cache: KeyValueCache;
   dataSources: {
     accountAPI: AccountAPI;
     categoryAPI: CategoryAPI;

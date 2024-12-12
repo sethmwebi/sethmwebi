@@ -34,6 +34,13 @@ export type Account = {
   userId: Scalars['ID']['output'];
 };
 
+export type AuthPayload = {
+  __typename?: 'AuthPayload';
+  refreshToken: Scalars['String']['output'];
+  token: Scalars['String']['output'];
+  user: User;
+};
+
 export type Category = {
   __typename?: 'Category';
   id: Scalars['ID']['output'];
@@ -96,6 +103,11 @@ export type Like = {
   user: User;
 };
 
+export type LoginInput = {
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
 export type Media = {
   __typename?: 'Media';
   id: Scalars['ID']['output'];
@@ -113,6 +125,9 @@ export type Mutation = {
   createPost: Post;
   createTag: Tag;
   createUser: User;
+  login?: Maybe<AuthPayload>;
+  loginWithGoogle: AuthPayload;
+  register: AuthPayload;
 };
 
 
@@ -145,6 +160,21 @@ export type MutationCreateUserArgs = {
   data: CreateUserInput;
 };
 
+
+export type MutationLoginArgs = {
+  data: LoginInput;
+};
+
+
+export type MutationLoginWithGoogleArgs = {
+  accessToken: Scalars['String']['input'];
+};
+
+
+export type MutationRegisterArgs = {
+  data: RegisterInput;
+};
+
 export type Post = {
   __typename?: 'Post';
   author: User;
@@ -165,11 +195,24 @@ export type Query = {
   __typename?: 'Query';
   categories: Array<Category>;
   comments: Array<Comment>;
+  me?: Maybe<User>;
   media: Array<Media>;
   posts: Array<Post>;
   tags: Array<Tag>;
   users: Array<User>;
 };
+
+export type RegisterInput = {
+  email: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  password: Scalars['String']['input'];
+};
+
+export enum Role {
+  Admin = 'ADMIN',
+  Superadmin = 'SUPERADMIN',
+  User = 'USER'
+}
 
 export type Tag = {
   __typename?: 'Tag';
@@ -181,17 +224,13 @@ export type Tag = {
 
 export type User = {
   __typename?: 'User';
-  accounts: Array<Account>;
-  comments: Array<Comment>;
   createdAt: Scalars['String']['output'];
   email: Scalars['String']['output'];
   emailVerified?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   image?: Maybe<Scalars['String']['output']>;
-  likes: Array<Like>;
-  media: Array<Media>;
   name?: Maybe<Scalars['String']['output']>;
-  posts: Array<Post>;
+  role: Role;
   updatedAt: Scalars['String']['output'];
 };
 
@@ -274,6 +313,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
   Account: ResolverTypeWrapper<Account>;
+  AuthPayload: ResolverTypeWrapper<AuthPayload>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   Category: ResolverTypeWrapper<Category>;
   Comment: ResolverTypeWrapper<Comment>;
@@ -286,10 +326,13 @@ export type ResolversTypes = {
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Like: ResolverTypeWrapper<Like>;
+  LoginInput: LoginInput;
   Media: ResolverTypeWrapper<Media>;
   Mutation: ResolverTypeWrapper<{}>;
   Post: ResolverTypeWrapper<Post>;
   Query: ResolverTypeWrapper<{}>;
+  RegisterInput: RegisterInput;
+  Role: Role;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Tag: ResolverTypeWrapper<Tag>;
   User: ResolverTypeWrapper<User>;
@@ -299,6 +342,7 @@ export type ResolversTypes = {
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   Account: Account;
+  AuthPayload: AuthPayload;
   Boolean: Scalars['Boolean']['output'];
   Category: Category;
   Comment: Comment;
@@ -311,10 +355,12 @@ export type ResolversParentTypes = {
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   Like: Like;
+  LoginInput: LoginInput;
   Media: Media;
   Mutation: {};
   Post: Post;
   Query: {};
+  RegisterInput: RegisterInput;
   String: Scalars['String']['output'];
   Tag: Tag;
   User: User;
@@ -335,6 +381,13 @@ export type AccountResolvers<ContextType = DataSourceContext, ParentType extends
   type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type AuthPayloadResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['AuthPayload'] = ResolversParentTypes['AuthPayload']> = {
+  refreshToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -379,6 +432,9 @@ export type MutationResolvers<ContextType = DataSourceContext, ParentType extend
   createPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<MutationCreatePostArgs, 'data'>>;
   createTag?: Resolver<ResolversTypes['Tag'], ParentType, ContextType, RequireFields<MutationCreateTagArgs, 'data'>>;
   createUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'data'>>;
+  login?: Resolver<Maybe<ResolversTypes['AuthPayload']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'data'>>;
+  loginWithGoogle?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginWithGoogleArgs, 'accessToken'>>;
+  register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationRegisterArgs, 'data'>>;
 };
 
 export type PostResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Post'] = ResolversParentTypes['Post']> = {
@@ -400,6 +456,7 @@ export type PostResolvers<ContextType = DataSourceContext, ParentType extends Re
 export type QueryResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   categories?: Resolver<Array<ResolversTypes['Category']>, ParentType, ContextType>;
   comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
+  me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;
   posts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType>;
   tags?: Resolver<Array<ResolversTypes['Tag']>, ParentType, ContextType>;
@@ -415,17 +472,13 @@ export type TagResolvers<ContextType = DataSourceContext, ParentType extends Res
 };
 
 export type UserResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
-  accounts?: Resolver<Array<ResolversTypes['Account']>, ParentType, ContextType>;
-  comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   emailVerified?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  likes?: Resolver<Array<ResolversTypes['Like']>, ParentType, ContextType>;
-  media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  posts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['Role'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -439,6 +492,7 @@ export type VerificationTokenResolvers<ContextType = DataSourceContext, ParentTy
 
 export type Resolvers<ContextType = DataSourceContext> = {
   Account?: AccountResolvers<ContextType>;
+  AuthPayload?: AuthPayloadResolvers<ContextType>;
   Category?: CategoryResolvers<ContextType>;
   Comment?: CommentResolvers<ContextType>;
   Like?: LikeResolvers<ContextType>;
