@@ -49,6 +49,8 @@ async function startApolloServer() {
 
   app.use(cors<cors.CorsRequest>());
 
+  app.use(express.json());
+
   app.use(passport.initialize());
 
   app.use(
