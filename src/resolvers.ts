@@ -1,54 +1,40 @@
 import { Resolvers, Role } from "./types";
 import bcrypt, { compare, hash } from "bcrypt";
 import passport from "passport";
-import db, { Account, User } from "./modules/db";
+import { User } from "./modules/db";
 import { generateToken, generateRefreshToken } from "./lib/authUtils";
-
-interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
-}
-
-interface LoginInput {
-  email: string;
-  password: string;
-}
-
-interface LoginWithGoogleInput {
-  accessToken: string;
-}
 
 export const resolvers: Resolvers = {
   Query: {
-    // me: async (_, __, { user }) => {
-    //   if (!user) {
-    //     throw new Error("Not authenticated");
-    //   }
-    //
-    //   const dbUser = await db.user.findUnique({
-    //     where: { id: user.id },
-    //     include: {
-    //       posts: true,
-    //     },
-    //   });
-    //
-    //   const posts = await db.post.findMany({
-    //     where: { userId: user.id },
-    //   });
-    //
-    //   if (!dbUser) {
-    //     throw new Error("User not found");
-    //   }
-    //
-    //   return {
-    //     ...dbUser,
-    //     posts,
-    //   };
-    // },
+    me: async (_, __, { user, db }) => {
+      if (!user) {
+        throw new Error("Not authenticated");
+      }
+
+      const dbUser = await db.user.findUnique({
+        where: { id: user.id },
+        include: {
+          accounts: true,
+        },
+      });
+
+      if (!dbUser) {
+        throw new Error("User not found");
+      }
+
+      return {
+        ...dbUser,
+        role: dbUser.role as Role,
+        emailVerified: dbUser.emailVerified
+          ? dbUser.emailVerified.toISOString()
+          : null,
+        createdAt: dbUser.createdAt.toISOString(),
+        updatedAt: dbUser.updatedAt.toISOString(),
+      };
+    },
   },
   Mutation: {
-    register: async (_, { data: { name, email, password } }) => {
+    register: async (_, { data: { name, email, password } }, { db }) => {
       const existingUser = await db.user.findUnique({ where: { email } });
       if (existingUser) {
         throw new Error("Email already in use");
@@ -92,7 +78,7 @@ export const resolvers: Resolvers = {
         },
       };
     },
-    login: async (_, { data: { email, password } }) => {
+    login: async (_, { data: { email, password } }, { db }) => {
       const user = await db.user.findUnique({
         where: { email },
         include: { accounts: true },
@@ -137,7 +123,7 @@ export const resolvers: Resolvers = {
         },
       };
     },
-    loginWithGoogle: async (_, { accessToken }) => {
+    loginWithGoogle: async (_, { accessToken }, { db }) => {
       // Authenticate using passport with the "google-token" strategy
       const user = await new Promise<User>((resolve, reject) => {
         passport.authenticate(
