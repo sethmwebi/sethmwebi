@@ -23,9 +23,10 @@ import {
   PostTagAPI,
   MediaAPI,
 } from "./datasources";
-import { PrismaClient } from "@prisma/client";
 import { DataSourceContext } from "./context";
 import db from "./modules/db";
+import passport from "passport";
+import { authenticateJwt } from "./lib/passport";
 
 const app = express();
 
@@ -37,8 +38,6 @@ const typeDefs = gql(
   }),
 );
 
-const prisma = new PrismaClient();
-
 async function startApolloServer() {
   const server = new ApolloServer<DataSourceContext>({
     typeDefs,
@@ -48,27 +47,33 @@ async function startApolloServer() {
 
   await server.start();
 
+  app.use(cors<cors.CorsRequest>());
+
+  app.use(passport.initialize());
+
   app.use(
     "/",
-    cors<cors.CorsRequest>(),
     expressMiddleware(server, {
       context: async ({ req }) => {
         const { cache } = server;
+
+        const user = await authenticateJwt(req);
         return {
           db,
           cache,
+          user,
           dataSources: {
-            accountAPI: new AccountAPI({ prisma }),
-            categoryAPI: new CategoryAPI({ prisma }),
-            commentAPI: new CommentAPI({ prisma }),
-            likeAPI: new LikeAPI({ prisma }),
-            mediaAPI: new MediaAPI({ prisma }),
-            postAPI: new PostAPI({ prisma }),
-            postCategoryAPI: new PostCategoryAPI({ prisma }),
-            postTagAPI: new PostTagAPI({ prisma }),
-            tagAPI: new TagAPI({ prisma }),
-            userAPI: new UserAPI({ prisma }),
-            verificationAPI: new VerificationTokenAPI({ prisma }),
+            accountAPI: new AccountAPI({ prisma: db }),
+            categoryAPI: new CategoryAPI({ prisma: db }),
+            commentAPI: new CommentAPI({ prisma: db }),
+            likeAPI: new LikeAPI({ prisma: db }),
+            mediaAPI: new MediaAPI({ prisma: db }),
+            postAPI: new PostAPI({ prisma: db }),
+            postCategoryAPI: new PostCategoryAPI({ prisma: db }),
+            postTagAPI: new PostTagAPI({ prisma: db }),
+            tagAPI: new TagAPI({ prisma: db }),
+            userAPI: new UserAPI({ prisma: db }),
+            verificationAPI: new VerificationTokenAPI({ prisma: db }),
           },
         };
       },
