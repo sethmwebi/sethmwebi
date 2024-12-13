@@ -1,4 +1,13 @@
-import { Resolvers, Role } from "./types";
+import {
+  Resolvers,
+  Role,
+  CreatePostInput,
+  CreateCommentInput,
+  CreateCategoryInput,
+  CreateTagInput,
+  CreateMediaInput,
+} from "./types";
+
 import bcrypt, { compare, hash } from "bcrypt";
 import passport from "passport";
 import { User } from "./modules/db";
@@ -40,7 +49,7 @@ export const resolvers: Resolvers = {
         throw new Error("Email already in use");
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await hash(password, 10);
 
       const newUser = await db.user.create({
         data: {

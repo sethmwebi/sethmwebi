@@ -6,7 +6,6 @@ import {
 } from "passport-jwt";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as LocalStrategy } from "passport-local";
-import jwt from "jsonwebtoken";
 import db, { Account, User } from "../modules/db";
 import { compare } from "bcrypt";
 
