@@ -4,10 +4,16 @@ import {
   ExtractJwt,
   StrategyOptions,
 } from "passport-jwt";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import {
+  GoogleCallbackParameters,
+  Strategy as GoogleStrategy,
+  Profile,
+  VerifyCallback,
+} from "passport-google-oauth20";
 import { Strategy as LocalStrategy } from "passport-local";
 import db, { Account, User } from "../modules/db";
 import { compare } from "bcrypt";
+import { Request } from "express";
 
 type JwtPayload = {
   id: string;
@@ -48,14 +54,18 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+      passReqToCallback: true, // Ensure this is true
     },
     async (
-      accessToken: string,
-      refreshToken: string,
-      profile: any,
-      done: (err: Error | null, user: User | false | null) => void,
+      req: Request, // Request object
+      accessToken: string, // OAuth2 access token
+      refreshToken: string, // OAuth2 refresh token
+      params: GoogleCallbackParameters, // Google's callback parameters (id_token, expiry, etc.)
+      profile: Profile, // Profile object with user data
+      done: VerifyCallback, // Callback to indicate success/failure
     ) => {
       try {
+        // Handle user creation or retrieval
         const user = await db.user.upsert({
           where: { email: profile.emails?.[0].value },
           create: {
@@ -91,9 +101,11 @@ passport.use(
             },
           },
         });
-        return done(null, user);
+
+        return done(null, user); // Successfully pass the user to Passport
       } catch (error) {
-        return done(error, false);
+        console.error("Error in Google authentication:", error);
+        return done(error, false); // Signal failure to Passport
       }
     },
   ),

@@ -7,11 +7,15 @@ export const CreatePostSchema = z.object({
   authorId: z.string().min(1, { message: "author id is required" }),
 });
 
+export type SanitizedCreatePostInput = z.infer<typeof CreatePostSchema>;
+
 export const CreateCommentSchema = z.object({
   content: z.string().min(1, { message: "comment required" }),
   postId: z.string().min(1, { message: "post id required" }),
   userId: z.string().min(1, { message: "user id required" }),
 });
+
+export type SanitizedCreateCommentInput = z.infer<typeof CreateCommentSchema>;
 
 export const CreateCategorySchema = z.object({
   name: z.string().min(1, { message: "name of the category required" }),
@@ -23,6 +27,8 @@ export const CreateCategorySchema = z.object({
     }),
 });
 
+export type SanitizedCreateCategoryInput = z.infer<typeof CreateCategorySchema>;
+
 export const CreateTagSchema = z.object({
   name: z.string().min(1, { message: "name of tag is required" }),
   slug: z
@@ -33,9 +39,13 @@ export const CreateTagSchema = z.object({
     }),
 });
 
+export type SanitizedCreateTagInput = z.infer<typeof CreateTagSchema>;
+
 export const CreateMediaSchema = z.object({
   url: z.string().url().min(1, { message: "Url to media is required" }),
   type: z.string().min(1, { message: "type of media is required" }),
-  postId: z.string().optional(),
-  userId: z.string().optional(),
+  postId: z.string(),
+  userId: z.string(),
 });
+
+export type SanitizedCreateMediaInput = z.infer<typeof CreateMediaSchema>;

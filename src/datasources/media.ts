@@ -12,7 +12,7 @@ export class MediaAPI {
     this.context = config.context;
   }
 
-  async createMedia(data: Media): Promise<Media> {
+  async createMedia(data: Omit<Media, "id">): Promise<Media> {
     try {
       return await this.prisma.media.create({
         data,

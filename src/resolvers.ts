@@ -1,17 +1,27 @@
-import {
-  Resolvers,
-  Role,
+import { Resolvers, Role } from "./types";
+
+import type {
   CreatePostInput,
   CreateCommentInput,
   CreateCategoryInput,
   CreateTagInput,
   CreateMediaInput,
-} from "./types";
+} from "./types"; // Replace with actual path
 
 import bcrypt, { compare, hash } from "bcrypt";
 import passport from "passport";
 import { User } from "./modules/db";
 import { generateToken, generateRefreshToken } from "./lib/authUtils";
+import {
+  CreateCommentSchema,
+  CreateMediaSchema,
+  CreatePostSchema,
+  CreateTagSchema,
+  SanitizedCreateCommentInput,
+  SanitizedCreateMediaInput,
+  SanitizedCreatePostInput,
+  SanitizedCreateTagInput,
+} from "./schemas";
 
 export const resolvers: Resolvers = {
   Query: {
@@ -192,6 +202,70 @@ export const resolvers: Resolvers = {
           updatedAt: user.updatedAt.toISOString(),
         },
       };
+    },
+
+    createPost: async (
+      _,
+      { data }: { data: SanitizedCreatePostInput },
+      { dataSources },
+    ) => {
+      // Sanitize and validate the input data using Zod
+      const sanitizedData = CreatePostSchema.parse(data);
+      try {
+        // Use the data source to create the post
+        const post = await dataSources.postAPI.createPost(sanitizedData);
+
+        return {
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to create post");
+      }
+    },
+    createComment: async (
+      _,
+      { data }: { data: SanitizedCreateCommentInput },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreateCommentSchema.parse(data);
+        const comment =
+          await dataSources.commentAPI.createComment(sanitizedData);
+        return {
+          ...comment,
+          createdAt: comment.createdAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to create post");
+      }
+    },
+    createTag: async (
+      _,
+      { data }: { data: SanitizedCreateTagInput },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreateTagSchema.parse(data);
+        const tag = await dataSources.tagAPI.createTag(sanitizedData);
+        return tag;
+      } catch (error) {
+        throw new Error("Failed to create tag");
+      }
+    },
+    createMedia: async (
+      _,
+      { data }: { data: SanitizedCreateMediaInput },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreateMediaSchema.parse(data);
+        const media = await dataSources.mediaAPI.createMedia(sanitizedData);
+        return media;
+      } catch (error) {
+        throw new Error("Failed to create media");
+      }
     },
   },
 };

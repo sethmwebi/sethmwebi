@@ -12,6 +12,17 @@ export class TagAPI {
     this.context = config.context;
   }
 
+  async createTag(data: Omit<Tag, "id">): Promise<Tag> {
+    try {
+      return await this.prisma.tag.create({
+        data,
+      });
+    } catch (error) {
+      console.error("Error creating tag:", error);
+      throw new Error("Failed to create tag");
+    }
+  }
+
   async getTagById(tagId: string): Promise<Tag | null> {
     try {
       return await this.prisma.tag.findUnique({ where: { id: tagId } });

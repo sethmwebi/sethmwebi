@@ -8,21 +8,41 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "removeComments": true, 
+    "removeComments": true,
     "skipLibCheck": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
+    "strictNullChecks": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["esnext", "esnext.asynciterable", "DOM"],
-    "types": ["node", "jest"],
+    "lib": [
+      "esnext",
+      "esnext.asynciterable",
+      "DOM"
+    ],
+    "types": [
+      "node",
+      "jest"
+    ],
     "baseUrl": ".",
     "paths": {
-      "*": ["types/*"]
+      "*": [
+        "types/*"
+      ]
     },
-    "typeRoots": ["node_modules/@types", "src/@types"],
+    "typeRoots": [
+      "node_modules/@types",
+      "src/@types"
+    ]
   },
-  "files": ["src/graphql.d.ts"],
-  "include": ["src/**/*"],
-  "exclude": ["codegen.ts", "dist"]
+  "files": [
+    "src/graphql.d.ts"
+  ],
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "codegen.ts",
+    "dist"
+  ]
 }

@@ -26,6 +26,9 @@ export class PostAPI {
           imageUrl: data.imageUrl || null,
           author: { connect: { id: data.authorId } },
         },
+        include: {
+          author: true,
+        },
       });
     } catch (error) {
       console.error("Error creating post: ", error);

@@ -12,7 +12,9 @@ export class CommentAPI {
     this.context = config.context;
   }
 
-  async createComment(data: Comment): Promise<Comment> {
+  async createComment(
+    data: Omit<Comment, "createdAt" | "id">,
+  ): Promise<Comment> {
     try {
       return await this.prisma.comment.create({ data });
     } catch (error) {
