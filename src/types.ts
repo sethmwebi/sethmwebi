@@ -218,12 +218,17 @@ export type Tag = {
 
 export type User = {
   __typename?: 'User';
+  accounts?: Maybe<Array<Maybe<Account>>>;
+  comments?: Maybe<Array<Maybe<Comment>>>;
   createdAt: Scalars['String']['output'];
   email: Scalars['String']['output'];
   emailVerified?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   image?: Maybe<Scalars['String']['output']>;
+  likes?: Maybe<Array<Maybe<Like>>>;
+  media?: Maybe<Array<Maybe<Media>>>;
   name?: Maybe<Scalars['String']['output']>;
+  posts?: Maybe<Array<Maybe<Post>>>;
   role: Role;
   updatedAt: Scalars['String']['output'];
 };
@@ -465,12 +470,17 @@ export type TagResolvers<ContextType = DataSourceContext, ParentType extends Res
 };
 
 export type UserResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
+  accounts?: Resolver<Maybe<Array<Maybe<ResolversTypes['Account']>>>, ParentType, ContextType>;
+  comments?: Resolver<Maybe<Array<Maybe<ResolversTypes['Comment']>>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   emailVerified?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  likes?: Resolver<Maybe<Array<Maybe<ResolversTypes['Like']>>>, ParentType, ContextType>;
+  media?: Resolver<Maybe<Array<Maybe<ResolversTypes['Media']>>>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  posts?: Resolver<Maybe<Array<Maybe<ResolversTypes['Post']>>>, ParentType, ContextType>;
   role?: Resolver<ResolversTypes['Role'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;

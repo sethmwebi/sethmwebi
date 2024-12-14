@@ -1,14 +1,5 @@
 import { Resolvers, Role } from "./types";
-
-import type {
-  CreatePostInput,
-  CreateCommentInput,
-  CreateCategoryInput,
-  CreateTagInput,
-  CreateMediaInput,
-} from "./types"; // Replace with actual path
-
-import bcrypt, { compare, hash } from "bcrypt";
+import { compare, hash } from "bcrypt";
 import passport from "passport";
 import { User } from "./modules/db";
 import { generateToken, generateRefreshToken } from "./lib/authUtils";
@@ -49,6 +40,11 @@ export const resolvers: Resolvers = {
           : null,
         createdAt: dbUser.createdAt.toISOString(),
         updatedAt: dbUser.updatedAt.toISOString(),
+        accounts: dbUser.accounts.map((account) => ({
+          ...account,
+          createdAt: account.createdAt.toISOString(),
+          updatedAt: account.updatedAt.toISOString(),
+        })),
       };
     },
   },
@@ -94,6 +90,11 @@ export const resolvers: Resolvers = {
             : null,
           createdAt: newUser.createdAt.toISOString(),
           updatedAt: newUser.updatedAt.toISOString(),
+          accounts: newUser.accounts.map((account) => ({
+            ...account,
+            createdAt: account.createdAt.toISOString(),
+            updatedAt: account.updatedAt.toISOString(),
+          })),
         },
       };
     },
@@ -139,6 +140,11 @@ export const resolvers: Resolvers = {
             : null,
           createdAt: user.createdAt.toISOString(),
           updatedAt: user.updatedAt.toISOString(),
+          accounts: user.accounts.map((account) => ({
+            ...account,
+            createdAt: account.createdAt.toISOString(),
+            updatedAt: account.updatedAt.toISOString(),
+          })),
         },
       };
     },

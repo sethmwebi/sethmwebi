@@ -32,6 +32,11 @@ type User {
   role: Role!
   emailVerified: String
   image: String
+  accounts: [Account]
+  posts: [Post]
+  comments: [Comment]
+  likes: [Like]
+  media: [Media]
   createdAt: String!
   updatedAt: String!
 }
