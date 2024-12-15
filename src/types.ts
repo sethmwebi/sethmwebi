@@ -189,12 +189,18 @@ export type Query = {
   __typename?: 'Query';
   account: Account;
   categories: Array<Category>;
+  category: Category;
   comments: Array<Comment>;
   me?: Maybe<User>;
   media: Array<Media>;
   posts: Array<Post>;
   tags: Array<Tag>;
   users: Array<User>;
+};
+
+
+export type QueryCategoryArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type RegisterInput = {
@@ -455,6 +461,7 @@ export type PostResolvers<ContextType = DataSourceContext, ParentType extends Re
 export type QueryResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   account?: Resolver<ResolversTypes['Account'], ParentType, ContextType>;
   categories?: Resolver<Array<ResolversTypes['Category']>, ParentType, ContextType>;
+  category?: Resolver<ResolversTypes['Category'], ParentType, ContextType, RequireFields<QueryCategoryArgs, 'id'>>;
   comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;

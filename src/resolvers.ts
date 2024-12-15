@@ -63,6 +63,20 @@ export const resolvers: Resolvers = {
         updatedAt: account.updatedAt.toISOString(),
       };
     },
+    category: async (_, { id }: { id: string }, { dataSources }) => {
+      // fetch category by id
+      const category = await dataSources.categoryAPI.getCategoryById(id);
+
+      if (!category) {
+        throw new Error(`Category with ID ${id} not found.`);
+      }
+
+      return category;
+    },
+    categories: async (_, __, { dataSources }) => {
+      // fetch all categories
+      return await dataSources.categoryAPI.getCategories();
+    },
   },
   Mutation: {
     register: async (_, { data: { name, email, password } }, { db }) => {
