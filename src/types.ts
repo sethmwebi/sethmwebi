@@ -187,6 +187,7 @@ export type Post = {
 
 export type Query = {
   __typename?: 'Query';
+  account: Account;
   categories: Array<Category>;
   comments: Array<Comment>;
   me?: Maybe<User>;
@@ -452,6 +453,7 @@ export type PostResolvers<ContextType = DataSourceContext, ParentType extends Re
 };
 
 export type QueryResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+  account?: Resolver<ResolversTypes['Account'], ParentType, ContextType>;
   categories?: Resolver<Array<ResolversTypes['Category']>, ParentType, ContextType>;
   comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;

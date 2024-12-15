@@ -6,6 +6,7 @@ type Query {
   tags: [Tag!]!
   media: [Media!]!
   me: User
+  account: Account!
 }
 
 type Mutation {

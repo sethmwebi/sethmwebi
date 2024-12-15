@@ -47,6 +47,22 @@ export const resolvers: Resolvers = {
         })),
       };
     },
+    account: async (_, __, { dataSources, user }) => {
+      if (!user || !user.id) {
+        throw new Error("User is not authenticated or user ID is missing.");
+      }
+      const account = await dataSources.accountAPI.getAccountByUserId(user.id!);
+
+      if (!account) {
+        throw new Error(`Account not found for user ID: ${user.id}`);
+      }
+
+      return {
+        ...account,
+        createdAt: account.createdAt.toISOString(),
+        updatedAt: account.updatedAt.toISOString(),
+      };
+    },
   },
   Mutation: {
     register: async (_, { data: { name, email, password } }, { db }) => {
