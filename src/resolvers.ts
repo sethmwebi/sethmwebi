@@ -5,10 +5,12 @@ import { User } from "./modules/db";
 import { generateToken, generateRefreshToken } from "./lib/authUtils";
 import {
   CreateCommentSchema,
+  CreateLikeSchema,
   CreateMediaSchema,
   CreatePostSchema,
   CreateTagSchema,
   SanitizedCreateCommentInput,
+  SanitizedCreateLikeInput,
   SanitizedCreateMediaInput,
   SanitizedCreatePostInput,
   SanitizedCreateTagInput,
@@ -258,9 +260,9 @@ export const resolvers: Resolvers = {
       { data }: { data: SanitizedCreatePostInput },
       { dataSources },
     ) => {
-      // Sanitize and validate the input data using Zod
-      const sanitizedData = CreatePostSchema.parse(data);
       try {
+        // Sanitize and validate the input data using Zod
+        const sanitizedData = CreatePostSchema.parse(data);
         // Use the data source to create the post
         const post = await dataSources.postAPI.createPost(sanitizedData);
 
@@ -300,6 +302,34 @@ export const resolvers: Resolvers = {
         return success;
       } catch (error) {
         throw new Error("Failed to delete comment");
+      }
+    },
+    createLike: async (
+      _,
+      { data }: { data: SanitizedCreateLikeInput },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreateLikeSchema.parse(data);
+        const like = await dataSources.likeAPI.createLike(sanitizedData);
+        return {
+          ...like,
+          createdAt: like.createdAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to create like");
+      }
+    },
+    deleteLike: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const success = await dataSources.likeAPI.deleteLike(id);
+        if (!success) {
+          throw new Error(`Failed to delete like with ID ${id}`);
+        }
+
+        return success;
+      } catch (error) {
+        throw new Error("Failed to delete like");
       }
     },
     createTag: async (

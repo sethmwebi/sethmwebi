@@ -29,6 +29,13 @@ export const CreateCategorySchema = z.object({
 
 export type SanitizedCreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 
+export const CreateLikeSchema = z.object({
+  postId: z.string().min(1, { message: "post id required" }),
+  userId: z.string().min(1, { message: "user id required" }),
+});
+
+export type SanitizedCreateLikeInput = z.infer<typeof CreateLikeSchema>;
+
 export const CreateTagSchema = z.object({
   name: z.string().min(1, { message: "name of tag is required" }),
   slug: z

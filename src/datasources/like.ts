@@ -12,25 +12,14 @@ export class LikeAPI {
     this.context = config.context;
   }
 
-  async createLike(postId: string, userId: string): Promise<Like> {
+  async createLike(data: Omit<Like, "createdAt" | "id">): Promise<Like> {
     try {
       return await this.prisma.like.create({
-        data: { postId, userId },
+        data,
       });
     } catch (error) {
       console.error("Error creating like: ", error);
       throw error;
-    }
-  }
-
-  async getLikeById(likeId: string): Promise<Like | null> {
-    try {
-      return await this.prisma.like.findUnique({
-        where: { id: likeId },
-      });
-    } catch (error) {
-      console.error("Error fetching like by ID:", error);
-      return null;
     }
   }
 
