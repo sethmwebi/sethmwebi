@@ -8,6 +8,7 @@ type Query {
   me: User
   account: Account!
   category(id: ID!): Category!
+  comment(id: ID!): Comment!
 }
 
 type Mutation {
@@ -19,6 +20,7 @@ type Mutation {
   register(data: RegisterInput!): AuthPayload!
   login(data: LoginInput!): AuthPayload
   loginWithGoogle(accessToken: String!): AuthPayload!
+  deleteComment(id: ID!): Boolean!
 }
 
 enum Role {

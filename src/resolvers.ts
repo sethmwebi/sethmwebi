@@ -77,6 +77,19 @@ export const resolvers: Resolvers = {
       // fetch all categories
       return await dataSources.categoryAPI.getCategories();
     },
+    comment: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const comment = await dataSources.commentAPI.getCommentById(id);
+
+        if (!comment) {
+          throw new Error(`Comment with ID ${id} not found`);
+        }
+
+        return { ...comment, createdAt: comment.createdAt.toISOString() };
+      } catch (error) {
+        throw new Error("An error occured");
+      }
+    },
   },
   Mutation: {
     register: async (_, { data: { name, email, password } }, { db }) => {
@@ -275,6 +288,18 @@ export const resolvers: Resolvers = {
         };
       } catch (error) {
         throw new Error("Failed to create post");
+      }
+    },
+    deleteComment: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        // delete the comment by id
+        const success = await dataSources.commentAPI.deleteComment(id);
+        if (!success) {
+          throw new Error(`Failed to delete comment with ID ${id}`);
+        }
+        return success;
+      } catch (error) {
+        throw new Error("Failed to delete comment");
       }
     },
     createTag: async (
