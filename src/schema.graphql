@@ -8,6 +8,7 @@ type Query {
   comment(id: ID!): Comment!
   categories: [Category!]!
   category(id: ID!): Category!
+  getPostCategories(postId: String!): [PostCategory!]!
   like(id: ID!): Like!
   tags: [Tag!]!
   media: [Media!]!
@@ -25,6 +26,7 @@ type Mutation {
   createLike(data: CreateLikeInput!): Like!
   deleteLike(id: ID!): Boolean!
   createCategory(data: CreateCategoryInput!): Category!
+  createPostCategory(data: CreatePostCategoryInput!): PostCategory!
   createTag(data: CreateTagInput!): Tag!
   createMedia(data: CreateMediaInput!): Media!
 }
@@ -86,6 +88,11 @@ type Post {
   categories: [Category]
   tags: [Tag]
   media: [Media]
+}
+
+type PostCategory {
+  postId: String!
+  categoryId: String!
 }
 
 type Comment {
@@ -154,6 +161,11 @@ input CreatePostInput {
   content: String!
   imageUrl: String
   authorId: ID!
+}
+
+input CreatePostCategoryInput {
+  postId: String!
+  categoryId: String!
 }
 
 input UpdatePostInput {

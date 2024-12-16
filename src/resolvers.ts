@@ -15,6 +15,8 @@ import {
   SanitizedCreatePostInput,
   SanitizedCreateTagInput,
   SanitizedUpdatePostInput,
+  SanitizedCreatePostCategoryInput,
+  CreatePostCategorySchema,
 } from "./schemas";
 
 export const resolvers: Resolvers = {
@@ -118,6 +120,22 @@ export const resolvers: Resolvers = {
         }));
       } catch (error) {
         throw new Error("Failed to fetch results");
+      }
+    },
+    getPostCategories: async (
+      _,
+      { postId }: { postId: string },
+      { dataSources },
+    ) => {
+      try {
+        const postCategories =
+          await dataSources.postCategoryAPI.getPostCategories(postId);
+        if (!postCategories.length) {
+          throw new Error("No categories found for the specified post");
+        }
+        return postCategories;
+      } catch (error) {
+        throw new Error("Failed to fetch post categories");
       }
     },
   },
@@ -332,6 +350,21 @@ export const resolvers: Resolvers = {
         return true;
       } catch (error) {
         throw new Error("Failed to delete post");
+      }
+    },
+    createPostCategory: async (
+      _,
+      { data }: { data: SanitizedCreatePostCategoryInput },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreatePostCategorySchema.parse(data);
+        return await dataSources.postCategoryAPI.createPostCategory(
+          sanitizedData.postId,
+          sanitizedData.categoryId,
+        );
+      } catch (error) {
+        throw new Error("Failed to create post category");
       }
     },
     createComment: async (

@@ -12,6 +12,15 @@ export type SanitizedUpdatePostInput = Partial<
   z.infer<typeof CreatePostSchema>
 >;
 
+export const CreatePostCategorySchema = z.object({
+  postId: z.string().min(1, { message: "Post Id is required" }),
+  categoryId: z.string().min(1, { message: "Category Id is required" }),
+});
+
+export type SanitizedCreatePostCategoryInput = z.infer<
+  typeof CreatePostCategorySchema
+>;
+
 export const CreateCommentSchema = z.object({
   content: z.string().min(1, { message: "comment required" }),
   postId: z.string().min(1, { message: "post id required" }),
