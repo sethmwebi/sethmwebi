@@ -132,9 +132,11 @@ export type Mutation = {
   createTag: Tag;
   deleteComment: Scalars['Boolean']['output'];
   deleteLike: Scalars['Boolean']['output'];
+  deletePost: Scalars['Boolean']['output'];
   login?: Maybe<AuthPayload>;
   loginWithGoogle: AuthPayload;
   register: AuthPayload;
+  updatePost?: Maybe<Post>;
 };
 
 
@@ -178,6 +180,11 @@ export type MutationDeleteLikeArgs = {
 };
 
 
+export type MutationDeletePostArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationLoginArgs = {
   data: LoginInput;
 };
@@ -190,6 +197,12 @@ export type MutationLoginWithGoogleArgs = {
 
 export type MutationRegisterArgs = {
   data: RegisterInput;
+};
+
+
+export type MutationUpdatePostArgs = {
+  data: UpdatePostInput;
+  id: Scalars['ID']['input'];
 };
 
 export type Post = {
@@ -218,6 +231,7 @@ export type Query = {
   like: Like;
   me?: Maybe<User>;
   media: Array<Media>;
+  post?: Maybe<Post>;
   posts: Array<Post>;
   tags: Array<Tag>;
   users: Array<User>;
@@ -235,6 +249,11 @@ export type QueryCommentArgs = {
 
 
 export type QueryLikeArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPostArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -256,6 +275,14 @@ export type Tag = {
   name: Scalars['String']['output'];
   posts?: Maybe<Array<Maybe<Post>>>;
   slug: Scalars['String']['output'];
+};
+
+export type UpdatePostInput = {
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  content?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  tags?: InputMaybe<Array<Scalars['ID']['input']>>;
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type User = {
@@ -377,6 +404,7 @@ export type ResolversTypes = {
   Role: Role;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Tag: ResolverTypeWrapper<Tag>;
+  UpdatePostInput: UpdatePostInput;
   User: ResolverTypeWrapper<User>;
   VerificationToken: ResolverTypeWrapper<VerificationToken>;
 };
@@ -406,6 +434,7 @@ export type ResolversParentTypes = {
   RegisterInput: RegisterInput;
   String: Scalars['String']['output'];
   Tag: Tag;
+  UpdatePostInput: UpdatePostInput;
   User: User;
   VerificationToken: VerificationToken;
 };
@@ -477,9 +506,11 @@ export type MutationResolvers<ContextType = DataSourceContext, ParentType extend
   createTag?: Resolver<ResolversTypes['Tag'], ParentType, ContextType, RequireFields<MutationCreateTagArgs, 'data'>>;
   deleteComment?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCommentArgs, 'id'>>;
   deleteLike?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteLikeArgs, 'id'>>;
+  deletePost?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeletePostArgs, 'id'>>;
   login?: Resolver<Maybe<ResolversTypes['AuthPayload']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'data'>>;
   loginWithGoogle?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginWithGoogleArgs, 'accessToken'>>;
   register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationRegisterArgs, 'data'>>;
+  updatePost?: Resolver<Maybe<ResolversTypes['Post']>, ParentType, ContextType, RequireFields<MutationUpdatePostArgs, 'data' | 'id'>>;
 };
 
 export type PostResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Post'] = ResolversParentTypes['Post']> = {
@@ -507,6 +538,7 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
   like?: Resolver<ResolversTypes['Like'], ParentType, ContextType, RequireFields<QueryLikeArgs, 'id'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;
+  post?: Resolver<Maybe<ResolversTypes['Post']>, ParentType, ContextType, RequireFields<QueryPostArgs, 'id'>>;
   posts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType>;
   tags?: Resolver<Array<ResolversTypes['Tag']>, ParentType, ContextType>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;

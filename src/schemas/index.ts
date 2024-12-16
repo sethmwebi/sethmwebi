@@ -8,6 +8,9 @@ export const CreatePostSchema = z.object({
 });
 
 export type SanitizedCreatePostInput = z.infer<typeof CreatePostSchema>;
+export type SanitizedUpdatePostInput = Partial<
+  z.infer<typeof CreatePostSchema>
+>;
 
 export const CreateCommentSchema = z.object({
   content: z.string().min(1, { message: "comment required" }),

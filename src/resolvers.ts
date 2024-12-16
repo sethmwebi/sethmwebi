@@ -1,4 +1,4 @@
-import { Resolvers, Role } from "./types";
+import { Post, Resolvers, Role } from "./types";
 import { compare, hash } from "bcrypt";
 import passport from "passport";
 import { User } from "./modules/db";
@@ -14,6 +14,7 @@ import {
   SanitizedCreateMediaInput,
   SanitizedCreatePostInput,
   SanitizedCreateTagInput,
+  SanitizedUpdatePostInput,
 } from "./schemas";
 
 export const resolvers: Resolvers = {
@@ -90,6 +91,33 @@ export const resolvers: Resolvers = {
         return { ...comment, createdAt: comment.createdAt.toISOString() };
       } catch (error) {
         throw new Error("An error occured");
+      }
+    },
+    post: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const post = await dataSources.postAPI.getPostById(id);
+        if (!post) {
+          throw new Error(`Post with ID ${id} not found`);
+        }
+        return {
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to fetch post");
+      }
+    },
+    posts: async (_, __, { dataSources }) => {
+      try {
+        const posts = await dataSources.postAPI.getAllPosts();
+        return posts.map((post) => ({
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.createdAt.toISOString(),
+        }));
+      } catch (error) {
+        throw new Error("Failed to fetch results");
       }
     },
   },
@@ -273,6 +301,37 @@ export const resolvers: Resolvers = {
         };
       } catch (error) {
         throw new Error("Failed to create post");
+      }
+    },
+    updatePost: async (
+      _,
+      { id, data }: { id: string; data: SanitizedUpdatePostInput },
+      { dataSources },
+    ) => {
+      try {
+        const updatedPost = await dataSources.postAPI.updatePost(id, data);
+        if (!updatedPost) {
+          throw new Error(`Failed to update post with ID ${id}`);
+        }
+        // format dates
+        return {
+          ...updatedPost,
+          createdAt: updatedPost.createdAt.toISOString(),
+          updatedAt: updatedPost.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to update the post");
+      }
+    },
+    deletePost: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const isDeleted = await dataSources.postAPI.deletePost(id);
+        if (!isDeleted) {
+          throw new Error("Deletion failed");
+        }
+        return true;
+      } catch (error) {
+        throw new Error("Failed to delete post");
       }
     },
     createComment: async (

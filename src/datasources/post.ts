@@ -63,14 +63,18 @@ export class PostAPI {
     }
   }
 
-  async deletePost(postId: string): Promise<Post | null> {
+  async deletePost(postId: string): Promise<boolean> {
     try {
-      return await this.prisma.post.delete({
-        where: { id: postId },
+      const post = await this.prisma.post.delete({
+        where: {
+          id: postId,
+        },
       });
+
+      return !!post;
     } catch (error) {
-      console.error("Error deleting post: ", error);
-      return null;
+      console.log("Error deleting post: ", error);
+      return false;
     }
   }
 

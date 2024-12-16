@@ -2,6 +2,7 @@ type Query {
   me: User
   account: Account!
   users: [User!]!
+  post(id: ID!): Post
   posts: [Post!]!
   comments: [Comment!]!
   comment(id: ID!): Comment!
@@ -17,6 +18,8 @@ type Mutation {
   login(data: LoginInput!): AuthPayload
   loginWithGoogle(accessToken: String!): AuthPayload!
   createPost(data: CreatePostInput!): Post!
+  updatePost(id: ID!, data: UpdatePostInput!): Post
+  deletePost(id: ID!): Boolean!
   createComment(data: CreateCommentInput!): Comment!
   deleteComment(id: ID!): Boolean!
   createLike(data: CreateLikeInput!): Like!
@@ -151,6 +154,14 @@ input CreatePostInput {
   content: String!
   imageUrl: String
   authorId: ID!
+}
+
+input UpdatePostInput {
+  title: String
+  content: String
+  imageUrl: String
+  categoryId: ID
+  tags: [ID!]
 }
 
 input CreateCommentInput {
