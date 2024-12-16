@@ -238,6 +238,12 @@ export type PostCategory = {
   postId: Scalars['String']['output'];
 };
 
+export type PostTag = {
+  __typename?: 'PostTag';
+  postId: Scalars['String']['output'];
+  tagId: Scalars['String']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   account: Account;
@@ -246,6 +252,7 @@ export type Query = {
   comment: Comment;
   comments: Array<Comment>;
   getPostCategories: Array<PostCategory>;
+  getPostTags: Array<PostTag>;
   like: Like;
   me?: Maybe<User>;
   media: Array<Media>;
@@ -267,6 +274,11 @@ export type QueryCommentArgs = {
 
 
 export type QueryGetPostCategoriesArgs = {
+  postId: Scalars['String']['input'];
+};
+
+
+export type QueryGetPostTagsArgs = {
   postId: Scalars['String']['input'];
 };
 
@@ -424,6 +436,7 @@ export type ResolversTypes = {
   Mutation: ResolverTypeWrapper<{}>;
   Post: ResolverTypeWrapper<Post>;
   PostCategory: ResolverTypeWrapper<PostCategory>;
+  PostTag: ResolverTypeWrapper<PostTag>;
   Query: ResolverTypeWrapper<{}>;
   RegisterInput: RegisterInput;
   Role: Role;
@@ -457,6 +470,7 @@ export type ResolversParentTypes = {
   Mutation: {};
   Post: Post;
   PostCategory: PostCategory;
+  PostTag: PostTag;
   Query: {};
   RegisterInput: RegisterInput;
   String: Scalars['String']['output'];
@@ -563,6 +577,12 @@ export type PostCategoryResolvers<ContextType = DataSourceContext, ParentType ex
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type PostTagResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['PostTag'] = ResolversParentTypes['PostTag']> = {
+  postId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tagId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type QueryResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   account?: Resolver<ResolversTypes['Account'], ParentType, ContextType>;
   categories?: Resolver<Array<ResolversTypes['Category']>, ParentType, ContextType>;
@@ -570,6 +590,7 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
   comment?: Resolver<ResolversTypes['Comment'], ParentType, ContextType, RequireFields<QueryCommentArgs, 'id'>>;
   comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
   getPostCategories?: Resolver<Array<ResolversTypes['PostCategory']>, ParentType, ContextType, RequireFields<QueryGetPostCategoriesArgs, 'postId'>>;
+  getPostTags?: Resolver<Array<ResolversTypes['PostTag']>, ParentType, ContextType, RequireFields<QueryGetPostTagsArgs, 'postId'>>;
   like?: Resolver<ResolversTypes['Like'], ParentType, ContextType, RequireFields<QueryLikeArgs, 'id'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;
@@ -621,6 +642,7 @@ export type Resolvers<ContextType = DataSourceContext> = {
   Mutation?: MutationResolvers<ContextType>;
   Post?: PostResolvers<ContextType>;
   PostCategory?: PostCategoryResolvers<ContextType>;
+  PostTag?: PostTagResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Tag?: TagResolvers<ContextType>;
   User?: UserResolvers<ContextType>;

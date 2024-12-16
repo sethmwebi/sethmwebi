@@ -138,6 +138,9 @@ export const resolvers: Resolvers = {
         throw new Error("Failed to fetch post categories");
       }
     },
+    getPostTags: async (_, { postId }: { postId: string }, { dataSources }) => {
+      return await dataSources.postTagAPI.getPostTags(postId);
+    },
   },
   Mutation: {
     register: async (_, { data: { name, email, password } }, { db }) => {

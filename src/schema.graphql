@@ -11,6 +11,7 @@ type Query {
   getPostCategories(postId: String!): [PostCategory!]!
   like(id: ID!): Like!
   tags: [Tag!]!
+  getPostTags(postId: String!): [PostTag!]!
   media: [Media!]!
 }
 
@@ -122,6 +123,11 @@ type Tag {
   name: String!
   slug: String!
   posts: [Post]
+}
+
+type PostTag {
+  postId: String!
+  tagId: String!
 }
 
 type Media {
