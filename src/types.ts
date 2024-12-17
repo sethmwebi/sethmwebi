@@ -264,11 +264,13 @@ export type Query = {
   comments: Array<Comment>;
   getPostCategories: Array<PostCategory>;
   getPostTags: Array<PostTag>;
+  getTagById?: Maybe<Tag>;
   like: Like;
   me?: Maybe<User>;
   media: Array<Media>;
   post?: Maybe<Post>;
   posts: Array<Post>;
+  /** Tags is different from post tags */
   tags: Array<Tag>;
   users: Array<User>;
 };
@@ -290,7 +292,12 @@ export type QueryGetPostCategoriesArgs = {
 
 
 export type QueryGetPostTagsArgs = {
-  postId: Scalars['String']['input'];
+  postId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetTagByIdArgs = {
+  tagId: Scalars['ID']['input'];
 };
 
 
@@ -319,7 +326,7 @@ export type Tag = {
   __typename?: 'Tag';
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
-  posts?: Maybe<Array<Maybe<Post>>>;
+  posts?: Maybe<Array<Maybe<PostTag>>>;
   slug: Scalars['String']['output'];
 };
 
@@ -605,6 +612,7 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
   comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
   getPostCategories?: Resolver<Array<ResolversTypes['PostCategory']>, ParentType, ContextType, RequireFields<QueryGetPostCategoriesArgs, 'postId'>>;
   getPostTags?: Resolver<Array<ResolversTypes['PostTag']>, ParentType, ContextType, RequireFields<QueryGetPostTagsArgs, 'postId'>>;
+  getTagById?: Resolver<Maybe<ResolversTypes['Tag']>, ParentType, ContextType, RequireFields<QueryGetTagByIdArgs, 'tagId'>>;
   like?: Resolver<ResolversTypes['Like'], ParentType, ContextType, RequireFields<QueryLikeArgs, 'id'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;
@@ -617,7 +625,7 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
 export type TagResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Tag'] = ResolversParentTypes['Tag']> = {
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  posts?: Resolver<Maybe<Array<Maybe<ResolversTypes['Post']>>>, ParentType, ContextType>;
+  posts?: Resolver<Maybe<Array<Maybe<ResolversTypes['PostTag']>>>, ParentType, ContextType>;
   slug?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };

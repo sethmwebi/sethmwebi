@@ -143,6 +143,33 @@ export const resolvers: Resolvers = {
     getPostTags: async (_, { postId }: { postId: string }, { dataSources }) => {
       return await dataSources.postTagAPI.getPostTags(postId);
     },
+    getTagById: async (_, { tagId }: { tagId: string }, { dataSources }) => {
+      try {
+        const tag = await dataSources.tagAPI.getTagById(tagId);
+        if (!tag) {
+          throw new Error(`Tag with ID ${tagId} not found.`);
+        }
+        return tag;
+      } catch (error) {
+        throw new Error("Failed to fetch tag by ID");
+      }
+    },
+    tags: async (_, __, { dataSources }) => {
+      try {
+        return await dataSources.tagAPI.getTags();
+      } catch (error) {
+        throw new Error("Failed to fetch tags");
+      }
+    },
+  },
+  Tag: {
+    posts: async (tag, _, { dataSources }) => {
+      try {
+        return await dataSources.postTagAPI.getPostTagsByTagId(tag.id);
+      } catch (error) {
+        return [];
+      }
+    },
   },
   Mutation: {
     register: async (_, { data: { name, email, password } }, { db }) => {
@@ -450,8 +477,16 @@ export const resolvers: Resolvers = {
     ) => {
       try {
         const sanitizedData = CreateTagSchema.parse(data);
-        const tag = await dataSources.tagAPI.createTag(sanitizedData);
-        return tag;
+        // check if tag with the same slug already exists
+        const existingTag = await dataSources.tagAPI.getTagBySlug(
+          sanitizedData.slug,
+        );
+        if (existingTag) {
+          throw new Error(
+            `A tag with slug "${sanitizedData.slug}" already exists.`,
+          );
+        }
+        return await dataSources.tagAPI.createTag(data);
       } catch (error) {
         throw new Error("Failed to create tag");
       }

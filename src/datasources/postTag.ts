@@ -23,6 +23,16 @@ export class PostTagAPI {
     }
   }
 
+  async getPostTagsByTagId(tagId: string): Promise<PostTag[]> {
+    try {
+      return await this.prisma.postTag.findMany({
+        where: { tagId },
+      });
+    } catch (error) {
+      return [];
+    }
+  }
+
   async getPostTags(postId: string): Promise<PostTag[]> {
     try {
       return await this.prisma.postTag.findMany({

@@ -10,8 +10,12 @@ type Query {
   category(id: ID!): Category!
   getPostCategories(postId: String!): [PostCategory!]!
   like(id: ID!): Like!
+  getPostTags(postId: ID!): [PostTag!]!
+  """
+  Tags is different from post tags
+  """
   tags: [Tag!]!
-  getPostTags(postId: String!): [PostTag!]!
+  getTagById(tagId: ID!): Tag
   media: [Media!]!
 }
 
@@ -123,7 +127,7 @@ type Tag {
   id: ID!
   name: String!
   slug: String!
-  posts: [Post]
+  posts: [PostTag]
 }
 
 type PostTag {

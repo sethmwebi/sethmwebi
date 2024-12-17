@@ -32,6 +32,16 @@ export class TagAPI {
     }
   }
 
+  async getTagBySlug(slug: string): Promise<Tag | null> {
+    try {
+      return await this.prisma.tag.findUnique({
+        where: { slug },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
   async getTags(): Promise<Tag[]> {
     try {
       return await this.prisma.tag.findMany();
