@@ -21,6 +21,8 @@ import {
   SanitizedCreatePostTagInput,
   SanitizedRegisterUserInput,
   RegisterSchema,
+  SanitizedLoginUserInput,
+  LoginSchema,
 } from "./schemas";
 
 export const resolvers: Resolvers = {
@@ -234,7 +236,8 @@ export const resolvers: Resolvers = {
         },
       };
     },
-    login: async (_, { data: { email, password } }, { db }) => {
+    login: async (_, { data }: { data: SanitizedLoginUserInput }, { db }) => {
+      const { email, password } = LoginSchema.parse(data);
       const user = await db.user.findUnique({
         where: { email },
         include: { accounts: true },
@@ -311,6 +314,34 @@ export const resolvers: Resolvers = {
                 },
               });
             }
+
+            // Upsert account for the user and provider
+            await db.account.upsert({
+              where: {
+                provider_providerAccountId: {
+                  provider: "google",
+                  providerAccountId: user.id,
+                },
+              },
+              create: {
+                type: "oauth",
+                provider: "google",
+                providerAccountId: user.id,
+                access_token: accessToken,
+                refresh_token: generateRefreshToken(existingUser),
+                token_type: "Bearer",
+                expires_at: Math.floor(Date.now() / 1000) + 3600,
+                scope: "profile email",
+                user: {
+                  connect: { id: existingUser.id },
+                },
+              },
+              update: {
+                access_token: accessToken,
+                refresh_token: generateRefreshToken(existingUser),
+                expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 7,
+              },
+            });
 
             resolve(existingUser);
           },

@@ -75,6 +75,13 @@ export const RegisterSchema = z
 
 export type SanitizedRegisterUserInput = z.infer<typeof RegisterSchema>;
 
+export const LoginSchema = z.object({
+  email: z.string().email({ message: "Invalid message address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+export type SanitizedLoginUserInput = z.infer<typeof RegisterSchema>;
+
 export const CreatePostSchema = z.object({
   title: z.string().min(1, { message: "title is required" }),
   content: z.string().min(1, { message: "content is required" }),
