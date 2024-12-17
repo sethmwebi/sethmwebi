@@ -1,5 +1,80 @@
 import { z } from "zod";
 
+// Utility functions for character checks
+const containsUppercase = (ch: string): boolean => /[A-Z]/.test(ch);
+const containsLowercase = (ch: string): boolean => /[a-z]/.test(ch);
+const containsSpecialChar = (ch: string): boolean =>
+  /[`!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?~ ]/.test(ch);
+
+// Define the Register Schema
+export const RegisterSchema = z
+  .object({
+    email: z.string().email({ message: "Invalid email address" }),
+    name: z.string().optional(),
+    provider: z
+      .enum(["local", "google", "facebook", "twitter", "github", "apple"])
+      .default("local"),
+    type: z
+      .enum(["credentials", "oauth", "social", "sso", "email"])
+      .default("credentials"),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters long" }),
+    confirmPassword: z.string(),
+  })
+  .superRefine(({ password, confirmPassword }, ctx) => {
+    // Check if passwords match
+    if (confirmPassword !== password) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Passwords do not match",
+      });
+    }
+
+    // Initialize character counters
+    let countOfUpperCase = 0,
+      countOfLowerCase = 0,
+      countOfNumbers = 0,
+      countOfSpecialChar = 0;
+
+    // Iterate through password to count character types
+    for (const ch of password) {
+      if (!isNaN(+ch)) countOfNumbers++;
+      else if (containsUppercase(ch)) countOfUpperCase++;
+      else if (containsLowercase(ch)) countOfLowerCase++;
+      else if (containsSpecialChar(ch)) countOfSpecialChar++;
+    }
+
+    // Prepare error messages as an array
+    const errorMessages: string[] = [];
+    if (countOfLowerCase < 1)
+      errorMessages.push(
+        "Password must include at least one lowercase letter.",
+      );
+    if (countOfUpperCase < 1)
+      errorMessages.push(
+        "Password must include at least one uppercase letter.",
+      );
+    if (countOfNumbers < 1)
+      errorMessages.push("Password must include at least one number.");
+    if (countOfSpecialChar < 1)
+      errorMessages.push(
+        "Password must include at least one special character.",
+      );
+
+    // Add custom issue with error messages array
+    if (errorMessages.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["password"],
+        message: JSON.stringify(errorMessages),
+      });
+    }
+  });
+
+export type SanitizedRegisterUserInput = z.infer<typeof RegisterSchema>;
+
 export const CreatePostSchema = z.object({
   title: z.string().min(1, { message: "title is required" }),
   content: z.string().min(1, { message: "content is required" }),

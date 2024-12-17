@@ -1,4 +1,4 @@
-import { Post, Resolvers, Role } from "./types";
+import { Resolvers, Role } from "./types";
 import { compare, hash } from "bcrypt";
 import passport from "passport";
 import { User } from "./modules/db";
@@ -19,6 +19,8 @@ import {
   CreatePostCategorySchema,
   CreatePostTagSchema,
   SanitizedCreatePostTagInput,
+  SanitizedRegisterUserInput,
+  RegisterSchema,
 } from "./schemas";
 
 export const resolvers: Resolvers = {
@@ -172,7 +174,18 @@ export const resolvers: Resolvers = {
     },
   },
   Mutation: {
-    register: async (_, { data: { name, email, password } }, { db }) => {
+    register: async (
+      _,
+      { data }: { data: SanitizedRegisterUserInput },
+      { db },
+    ) => {
+      const {
+        email,
+        name,
+        password,
+        provider = "local",
+        type = "credentials",
+      } = RegisterSchema.parse(data);
       const existingUser = await db.user.findUnique({ where: { email } });
       if (existingUser) {
         throw new Error("Email already in use");
@@ -187,8 +200,8 @@ export const resolvers: Resolvers = {
           role: "USER",
           accounts: {
             create: {
-              type: "credentials",
-              provider: "local",
+              type,
+              provider,
               providerAccountId: email,
               access_token: hashedPassword,
             },
