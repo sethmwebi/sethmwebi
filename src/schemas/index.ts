@@ -21,6 +21,13 @@ export type SanitizedCreatePostCategoryInput = z.infer<
   typeof CreatePostCategorySchema
 >;
 
+export const CreatePostTagSchema = z.object({
+  postId: z.string().min(1, { message: "Post Id is required" }),
+  tagId: z.string().min(1, { message: "Tag Id is required" }),
+});
+
+export type SanitizedCreatePostTagInput = z.infer<typeof CreatePostTagSchema>;
+
 export const CreateCommentSchema = z.object({
   content: z.string().min(1, { message: "comment required" }),
   postId: z.string().min(1, { message: "post id required" }),

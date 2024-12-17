@@ -93,6 +93,11 @@ export type CreatePostInput = {
   title: Scalars['String']['input'];
 };
 
+export type CreatePostTagInput = {
+  postId: Scalars['String']['input'];
+  tagId: Scalars['String']['input'];
+};
+
 export type CreateTagInput = {
   name: Scalars['String']['input'];
   slug: Scalars['String']['input'];
@@ -135,6 +140,7 @@ export type Mutation = {
   createMedia: Media;
   createPost: Post;
   createPostCategory: PostCategory;
+  createPostTag: PostTag;
   createTag: Tag;
   deleteComment: Scalars['Boolean']['output'];
   deleteLike: Scalars['Boolean']['output'];
@@ -173,6 +179,11 @@ export type MutationCreatePostArgs = {
 
 export type MutationCreatePostCategoryArgs = {
   data: CreatePostCategoryInput;
+};
+
+
+export type MutationCreatePostTagArgs = {
+  data: CreatePostTagInput;
 };
 
 
@@ -426,6 +437,7 @@ export type ResolversTypes = {
   CreateMediaInput: CreateMediaInput;
   CreatePostCategoryInput: CreatePostCategoryInput;
   CreatePostInput: CreatePostInput;
+  CreatePostTagInput: CreatePostTagInput;
   CreateTagInput: CreateTagInput;
   CreateUserInput: CreateUserInput;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
@@ -460,6 +472,7 @@ export type ResolversParentTypes = {
   CreateMediaInput: CreateMediaInput;
   CreatePostCategoryInput: CreatePostCategoryInput;
   CreatePostInput: CreatePostInput;
+  CreatePostTagInput: CreatePostTagInput;
   CreateTagInput: CreateTagInput;
   CreateUserInput: CreateUserInput;
   ID: Scalars['ID']['output'];
@@ -545,6 +558,7 @@ export type MutationResolvers<ContextType = DataSourceContext, ParentType extend
   createMedia?: Resolver<ResolversTypes['Media'], ParentType, ContextType, RequireFields<MutationCreateMediaArgs, 'data'>>;
   createPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<MutationCreatePostArgs, 'data'>>;
   createPostCategory?: Resolver<ResolversTypes['PostCategory'], ParentType, ContextType, RequireFields<MutationCreatePostCategoryArgs, 'data'>>;
+  createPostTag?: Resolver<ResolversTypes['PostTag'], ParentType, ContextType, RequireFields<MutationCreatePostTagArgs, 'data'>>;
   createTag?: Resolver<ResolversTypes['Tag'], ParentType, ContextType, RequireFields<MutationCreateTagArgs, 'data'>>;
   deleteComment?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCommentArgs, 'id'>>;
   deleteLike?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteLikeArgs, 'id'>>;

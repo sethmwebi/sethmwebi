@@ -17,6 +17,8 @@ import {
   SanitizedUpdatePostInput,
   SanitizedCreatePostCategoryInput,
   CreatePostCategorySchema,
+  CreatePostTagSchema,
+  SanitizedCreatePostTagInput,
 } from "./schemas";
 
 export const resolvers: Resolvers = {
@@ -425,6 +427,20 @@ export const resolvers: Resolvers = {
         return success;
       } catch (error) {
         throw new Error("Failed to delete like");
+      }
+    },
+    createPostTag: async (
+      _,
+      { data }: { data: SanitizedCreatePostTagInput },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreatePostTagSchema.parse(data);
+        const postTag =
+          await dataSources.postTagAPI.createPostTag(sanitizedData);
+        return postTag;
+      } catch (error) {
+        throw new Error("Failed to create post tag");
       }
     },
     createTag: async (

@@ -28,6 +28,7 @@ type Mutation {
   deleteLike(id: ID!): Boolean!
   createCategory(data: CreateCategoryInput!): Category!
   createPostCategory(data: CreatePostCategoryInput!): PostCategory!
+  createPostTag(data: CreatePostTagInput!): PostTag!
   createTag(data: CreateTagInput!): Tag!
   createMedia(data: CreateMediaInput!): Media!
 }
@@ -172,6 +173,16 @@ input CreatePostInput {
 input CreatePostCategoryInput {
   postId: String!
   categoryId: String!
+}
+
+input CreatePostTagInput {
+  postId: String!
+  tagId: String!
+}
+
+type PostTag {
+  postId: String!
+  tagId: String!
 }
 
 input UpdatePostInput {

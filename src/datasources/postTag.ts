@@ -12,10 +12,10 @@ export class PostTagAPI {
     this.context = config.context;
   }
 
-  async createPostTag(postId: string, tagId: string): Promise<PostTag> {
+  async createPostTag(data: PostTag): Promise<PostTag> {
     try {
       return await this.prisma.postTag.create({
-        data: { postId, tagId },
+        data,
       });
     } catch (error) {
       console.log("Error creating post tag: ", error);
