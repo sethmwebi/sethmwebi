@@ -13,25 +13,16 @@ export class UserAPI {
     this.context = config.context;
   }
 
-  async findOrCreateUser(
-    emailInput: { email?: string } = {},
-  ): Promise<User | null> {
-    const email = this.context?.user?.email || emailInput.email;
-    if (!email) {
-      console.log("invalid or missing email");
-      return null;
-    }
-
+  async createUser(
+    data: Omit<User, "createdAt" | "updatedAt" | "id" | "emailVerified">,
+  ): Promise<User> {
     try {
-      const user = await this.prisma.user.upsert({
-        where: { email },
-        create: { email },
-        update: { email },
+      const user = await this.prisma.user.create({
+        data,
       });
       return user;
     } catch (error) {
-      console.log("Error in upsert");
-      return null;
+      throw new Error("Failed to create user");
     }
   }
 
@@ -40,6 +31,24 @@ export class UserAPI {
     try {
       return await this.prisma.user.findUnique({
         where: { id: userId },
+        include: {
+          posts: true,
+          comments: true,
+          likes: true,
+          media: true,
+        },
+      });
+    } catch (error) {
+      console.log("Error fetching user by ID:", error);
+      return null;
+    }
+  }
+
+  // get user by id
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      return await this.prisma.user.findUnique({
+        where: { email },
         include: {
           posts: true,
           comments: true,

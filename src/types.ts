@@ -108,6 +108,7 @@ export type CreateUserInput = {
   emailVerified?: InputMaybe<Scalars['String']['input']>;
   image?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Role>;
 };
 
 export type Like = {
@@ -142,13 +143,16 @@ export type Mutation = {
   createPostCategory: PostCategory;
   createPostTag: PostTag;
   createTag: Tag;
+  createUser: User;
   deleteComment: Scalars['Boolean']['output'];
   deleteLike: Scalars['Boolean']['output'];
   deletePost: Scalars['Boolean']['output'];
+  deleteUser: Scalars['Boolean']['output'];
   login?: Maybe<AuthPayload>;
   loginWithGoogle: AuthPayload;
   register: AuthPayload;
   updatePost?: Maybe<Post>;
+  updateUserProfile?: Maybe<User>;
 };
 
 
@@ -192,6 +196,11 @@ export type MutationCreateTagArgs = {
 };
 
 
+export type MutationCreateUserArgs = {
+  data: CreateUserInput;
+};
+
+
 export type MutationDeleteCommentArgs = {
   id: Scalars['ID']['input'];
 };
@@ -203,6 +212,11 @@ export type MutationDeleteLikeArgs = {
 
 
 export type MutationDeletePostArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteUserArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -224,6 +238,12 @@ export type MutationRegisterArgs = {
 
 export type MutationUpdatePostArgs = {
   data: UpdatePostInput;
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateUserProfileArgs = {
+  data: UpdateUserProfileInput;
   id: Scalars['ID']['input'];
 };
 
@@ -262,9 +282,14 @@ export type Query = {
   category: Category;
   comment: Comment;
   comments: Array<Comment>;
+  getCommentsByUserId: Array<Comment>;
+  getLikesByUserId: Array<Like>;
+  getMediaByUserId: Array<Media>;
   getPostCategories: Array<PostCategory>;
   getPostTags: Array<PostTag>;
+  getPostsByUserId: Array<Post>;
   getTagById?: Maybe<Tag>;
+  getUserById?: Maybe<User>;
   like: Like;
   me?: Maybe<User>;
   media: Array<Media>;
@@ -286,6 +311,21 @@ export type QueryCommentArgs = {
 };
 
 
+export type QueryGetCommentsByUserIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryGetLikesByUserIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryGetMediaByUserIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type QueryGetPostCategoriesArgs = {
   postId: Scalars['String']['input'];
 };
@@ -296,8 +336,18 @@ export type QueryGetPostTagsArgs = {
 };
 
 
+export type QueryGetPostsByUserIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type QueryGetTagByIdArgs = {
   tagId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetUserByIdArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -336,6 +386,13 @@ export type UpdatePostInput = {
   imageUrl?: InputMaybe<Scalars['String']['input']>;
   tags?: InputMaybe<Array<Scalars['ID']['input']>>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateUserProfileInput = {
+  email?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Role>;
 };
 
 export type User = {
@@ -462,6 +519,7 @@ export type ResolversTypes = {
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Tag: ResolverTypeWrapper<Tag>;
   UpdatePostInput: UpdatePostInput;
+  UpdateUserProfileInput: UpdateUserProfileInput;
   User: ResolverTypeWrapper<User>;
   VerificationToken: ResolverTypeWrapper<VerificationToken>;
 };
@@ -496,6 +554,7 @@ export type ResolversParentTypes = {
   String: Scalars['String']['output'];
   Tag: Tag;
   UpdatePostInput: UpdatePostInput;
+  UpdateUserProfileInput: UpdateUserProfileInput;
   User: User;
   VerificationToken: VerificationToken;
 };
@@ -567,13 +626,16 @@ export type MutationResolvers<ContextType = DataSourceContext, ParentType extend
   createPostCategory?: Resolver<ResolversTypes['PostCategory'], ParentType, ContextType, RequireFields<MutationCreatePostCategoryArgs, 'data'>>;
   createPostTag?: Resolver<ResolversTypes['PostTag'], ParentType, ContextType, RequireFields<MutationCreatePostTagArgs, 'data'>>;
   createTag?: Resolver<ResolversTypes['Tag'], ParentType, ContextType, RequireFields<MutationCreateTagArgs, 'data'>>;
+  createUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'data'>>;
   deleteComment?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCommentArgs, 'id'>>;
   deleteLike?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteLikeArgs, 'id'>>;
   deletePost?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeletePostArgs, 'id'>>;
+  deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteUserArgs, 'id'>>;
   login?: Resolver<Maybe<ResolversTypes['AuthPayload']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'data'>>;
   loginWithGoogle?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginWithGoogleArgs, 'accessToken'>>;
   register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationRegisterArgs, 'data'>>;
   updatePost?: Resolver<Maybe<ResolversTypes['Post']>, ParentType, ContextType, RequireFields<MutationUpdatePostArgs, 'data' | 'id'>>;
+  updateUserProfile?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationUpdateUserProfileArgs, 'data' | 'id'>>;
 };
 
 export type PostResolvers<ContextType = DataSourceContext, ParentType extends ResolversParentTypes['Post'] = ResolversParentTypes['Post']> = {
@@ -610,9 +672,14 @@ export type QueryResolvers<ContextType = DataSourceContext, ParentType extends R
   category?: Resolver<ResolversTypes['Category'], ParentType, ContextType, RequireFields<QueryCategoryArgs, 'id'>>;
   comment?: Resolver<ResolversTypes['Comment'], ParentType, ContextType, RequireFields<QueryCommentArgs, 'id'>>;
   comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
+  getCommentsByUserId?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType, RequireFields<QueryGetCommentsByUserIdArgs, 'id'>>;
+  getLikesByUserId?: Resolver<Array<ResolversTypes['Like']>, ParentType, ContextType, RequireFields<QueryGetLikesByUserIdArgs, 'id'>>;
+  getMediaByUserId?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType, RequireFields<QueryGetMediaByUserIdArgs, 'id'>>;
   getPostCategories?: Resolver<Array<ResolversTypes['PostCategory']>, ParentType, ContextType, RequireFields<QueryGetPostCategoriesArgs, 'postId'>>;
   getPostTags?: Resolver<Array<ResolversTypes['PostTag']>, ParentType, ContextType, RequireFields<QueryGetPostTagsArgs, 'postId'>>;
+  getPostsByUserId?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType, RequireFields<QueryGetPostsByUserIdArgs, 'id'>>;
   getTagById?: Resolver<Maybe<ResolversTypes['Tag']>, ParentType, ContextType, RequireFields<QueryGetTagByIdArgs, 'tagId'>>;
+  getUserById?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryGetUserByIdArgs, 'id'>>;
   like?: Resolver<ResolversTypes['Like'], ParentType, ContextType, RequireFields<QueryLikeArgs, 'id'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   media?: Resolver<Array<ResolversTypes['Media']>, ParentType, ContextType>;

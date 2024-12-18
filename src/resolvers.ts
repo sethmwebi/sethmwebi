@@ -23,6 +23,8 @@ import {
   RegisterSchema,
   SanitizedLoginUserInput,
   LoginSchema,
+  CreateUserSchema,
+  UpdateUserProfileSchema,
 } from "./schemas";
 
 export const resolvers: Resolvers = {
@@ -57,6 +59,80 @@ export const resolvers: Resolvers = {
           updatedAt: account.updatedAt.toISOString(),
         })),
       };
+    },
+    getUserById: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const user = await dataSources.userAPI.getUserById(id);
+        if (!user) {
+          throw new Error("User not found");
+        }
+        return {
+          ...user,
+          role: user.role as Role,
+          emailVerified: user.emailVerified
+            ? user.emailVerified.toISOString()
+            : null,
+
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to fetch user");
+      }
+    },
+    getPostsByUserId: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const posts = await dataSources.userAPI.getPostsByUserId(id);
+        if (!posts || posts.length === 0) {
+          throw new Error("No posts found for the user");
+        }
+        return posts.map((post) => ({
+          ...post,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        }));
+      } catch (error) {
+        throw new Error("Failed to fetch posts by user id");
+      }
+    },
+    getCommentsByUserId: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const comments = await dataSources.userAPI.getCommentsByUserId(id);
+        if (!comments || comments.length === 0) {
+          throw new Error("No comments found for the user");
+        }
+        return comments.map((comment) => ({
+          ...comment,
+          createdAt: comment.createdAt.toISOString(),
+        }));
+      } catch (error) {
+        throw new Error("Failed to fetch comments by user ID.");
+      }
+    },
+    getLikesByUserId: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const likes = await dataSources.userAPI.getLikesByUserId(id);
+        if (!likes || likes.length === 0) {
+          throw new Error("No likes found for the user");
+        }
+        return likes.map((like) => ({
+          ...like,
+          createdAt: like.createdAt.toISOString(),
+        }));
+      } catch (error) {
+        throw new Error("Failed to fetch likes by user ID.");
+      }
+    },
+    getMediaByUserId: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const media = await dataSources.userAPI.getMediaByUserId(id);
+        if (!media || media.length === 0) {
+          throw new Error("No media found for this user");
+        }
+        return media;
+      } catch (error) {
+        throw new Error("Failed to fetch media by user id");
+      }
     },
     account: async (_, __, { dataSources, user }) => {
       if (!user || !user.id) {
@@ -327,7 +403,7 @@ export const resolvers: Resolvers = {
                 type: "oauth",
                 provider: "google",
                 providerAccountId: user.id,
-                access_token: accessToken,
+                access_token: generateToken(existingUser),
                 refresh_token: generateRefreshToken(existingUser),
                 token_type: "Bearer",
                 expires_at: Math.floor(Date.now() / 1000) + 3600,
@@ -337,7 +413,7 @@ export const resolvers: Resolvers = {
                 },
               },
               update: {
-                access_token: accessToken,
+                access_token: generateToken(existingUser),
                 refresh_token: generateRefreshToken(existingUser),
                 expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 7,
               },
@@ -376,7 +452,84 @@ export const resolvers: Resolvers = {
         },
       };
     },
+    createUser: async (
+      _,
 
+      {
+        data,
+      }: {
+        data: { email: string; name?: string; image?: string; role?: Role };
+      },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = CreateUserSchema.parse({
+          ...data,
+          name: data.name ?? null, // Convert undefined to null
+          image: data.image ?? null, // Convert undefined to null
+        });
+        const newUser = await dataSources.userAPI.createUser(sanitizedData);
+        return {
+          ...newUser,
+          role: newUser.role as Role,
+          emailVerified: newUser.emailVerified
+            ? newUser.emailVerified.toISOString()
+            : null,
+          createdAt: newUser.createdAt.toISOString(),
+          updatedAt: newUser.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to create user");
+      }
+    },
+    updateUserProfile: async (
+      _,
+      {
+        id,
+        data,
+      }: {
+        id: string;
+        data: { email: string; name?: string; image?: string; role?: Role };
+      },
+      { dataSources },
+    ) => {
+      try {
+        const sanitizedData = UpdateUserProfileSchema.parse({
+          ...data,
+          name: data.name ?? null, // Convert undefined to null
+          image: data.image ?? null, // Convert undefined to null
+        });
+        const updatedUser = await dataSources.userAPI.updateUserProfile(
+          id,
+          sanitizedData,
+        );
+        if (!updatedUser) {
+          throw new Error("User not found!");
+        }
+        return {
+          ...updatedUser,
+          role: updatedUser.role as Role,
+          emailVerified: updatedUser.emailVerified
+            ? updatedUser.emailVerified.toISOString()
+            : null,
+          createdAt: updatedUser.createdAt.toISOString(),
+          updatedAt: updatedUser.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        throw new Error("Failed to update user profile.");
+      }
+    },
+    deleteUser: async (_, { id }: { id: string }, { dataSources }) => {
+      try {
+        const success = await dataSources.userAPI.deleteUser(id);
+        if (!success) {
+          throw new Error("user deletion failed.");
+        }
+        return success;
+      } catch (error) {
+        throw new Error("Failed to delete user");
+      }
+    },
     createPost: async (
       _,
       { data }: { data: SanitizedCreatePostInput },

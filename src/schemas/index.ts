@@ -76,11 +76,37 @@ export const RegisterSchema = z
 export type SanitizedRegisterUserInput = z.infer<typeof RegisterSchema>;
 
 export const LoginSchema = z.object({
-  email: z.string().email({ message: "Invalid message address" }),
+  email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(1, { message: "Password is required" }),
 });
 
 export type SanitizedLoginUserInput = z.infer<typeof RegisterSchema>;
+
+// this is different from Register Schema as it allows an admin to register a user from the dashboard
+export const CreateUserSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  name: z.string().nullable().default(null),
+  image: z
+    .string()
+    .url({ message: "Enter a valid url string" })
+    .nullable()
+    .default(null),
+  role: z.enum(["USER", "ADMIN", "SUPERADMIN"]).optional().default("USER"),
+});
+
+// These could not work for some reason
+// export type SanitizedCreateUserInput = z.infer<typeof CreateUserSchema>;
+export const UpdateUserProfileSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+  image: z.string().url().optional(),
+  role: z.enum(["USER", "ADMIN", "SUPERADMIN"]).optional(),
+});
+
+// could not get this to work
+export type SanitizedUpdateUserProfileInput = Partial<
+  z.infer<typeof UpdateUserProfileSchema>
+>;
 
 export const CreatePostSchema = z.object({
   title: z.string().min(1, { message: "title is required" }),
