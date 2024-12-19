@@ -21,7 +21,6 @@ type Query {
   """
   tags: [Tag!]!
   getTagById(tagId: ID!): Tag
-  media: [Media!]!
 }
 
 type Mutation {

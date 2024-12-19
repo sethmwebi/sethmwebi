@@ -251,6 +251,16 @@ export const resolvers: Resolvers = {
       }
     },
   },
+  User: {
+    media: async (parent, _, { dataSources }) => {
+      try {
+        const media = await dataSources.mediaAPI.getMediaByUserId(parent.id);
+        return media;
+      } catch (error) {
+        throw new Error("Failed to fetch media for user");
+      }
+    },
+  },
   Mutation: {
     register: async (
       _,

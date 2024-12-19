@@ -23,14 +23,13 @@ export class MediaAPI {
     }
   }
 
-  async getMediaById(mediaId: string): Promise<Media | null> {
+  async getMediaByUserId(userId: string): Promise<Media[]> {
     try {
-      return await this.prisma.media.findUnique({
-        where: { id: mediaId },
+      return await this.prisma.media.findMany({
+        where: { userId },
       });
     } catch (error) {
-      console.error("Error fetching media by ID: ", error);
-      return null;
+      throw new Error("Failed to fetch media by user.");
     }
   }
 }
