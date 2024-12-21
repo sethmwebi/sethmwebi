@@ -26,12 +26,21 @@ import {
   CreateUserSchema,
   UpdateUserProfileSchema,
 } from "./schemas";
+import { GraphQLError } from "graphql";
 
 export const resolvers: Resolvers = {
   Query: {
     me: async (_, __, { user, db }) => {
       if (!user) {
-        throw new Error("Not authenticated");
+        throw new GraphQLError(
+          "You must be logged in to access this resource.",
+          {
+            extensions: {
+              code: "UNAUTHENTICATED",
+              status: 401,
+            },
+          },
+        );
       }
 
       const dbUser = await db.user.findUnique({
@@ -42,7 +51,15 @@ export const resolvers: Resolvers = {
       });
 
       if (!dbUser) {
-        throw new Error("User not found");
+        throw new GraphQLError(
+          "User not found. Please ensure the user ID is correct.",
+          {
+            extensions: {
+              code: "BAD_USER_INPUT",
+              status: 404,
+            },
+          },
+        );
       }
 
       return {

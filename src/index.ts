@@ -7,8 +7,8 @@ import http from "http";
 import cors from "cors";
 import { readFileSync } from "fs";
 import path from "path";
-import { resolvers } from "./resolvers";
 import { gql } from "graphql-tag";
+import { resolvers } from "./utils/errorHandler";
 
 import {
   UserAPI,
@@ -27,6 +27,7 @@ import { DataSourceContext } from "./context";
 import db from "./modules/db";
 import passport from "passport";
 import { authenticateJwt } from "./lib/passport";
+import { ZodError } from "zod";
 
 const app = express();
 
@@ -42,7 +43,31 @@ async function startApolloServer() {
   const server = new ApolloServer<DataSourceContext>({
     typeDefs,
     resolvers,
+    status400ForVariableCoercionErrors: true,
+    includeStacktraceInErrorResponses: process.env.NODE_ENV! === "development",
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+    formatError: (formattedError, error: any) => {
+      if (error.originalError instanceof ZodError) {
+        return {
+          message: "Validation error occurred.",
+          extensions: {
+            code: "BAD_USER_INPUT",
+            status: 400,
+            errors: error.originalError.errors,
+          },
+        };
+      }
+
+      if (formattedError.extensions?.code === "INTERNAL_SERVER_ERROR") {
+        console.log("Internal server error: ", error);
+        return {
+          message: "An internal server error occurred.",
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        };
+      }
+
+      return formattedError;
+    },
   });
 
   await server.start();
