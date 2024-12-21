@@ -43,45 +43,63 @@ export const resolvers: Resolvers = {
         );
       }
 
-      const dbUser = await db.user.findUnique({
-        where: { id: user.id },
-        include: {
-          accounts: true,
-        },
-      });
-
-      if (!dbUser) {
-        throw new GraphQLError(
-          "User not found. Please ensure the user ID is correct.",
-          {
-            extensions: {
-              code: "BAD_USER_INPUT",
-              status: 404,
-            },
+      try {
+        const dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          include: {
+            accounts: true,
           },
-        );
-      }
+        });
 
-      return {
-        ...dbUser,
-        role: dbUser.role as Role,
-        emailVerified: dbUser.emailVerified
-          ? dbUser.emailVerified.toISOString()
-          : null,
-        createdAt: dbUser.createdAt.toISOString(),
-        updatedAt: dbUser.updatedAt.toISOString(),
-        accounts: dbUser.accounts.map((account) => ({
-          ...account,
-          createdAt: account.createdAt.toISOString(),
-          updatedAt: account.updatedAt.toISOString(),
-        })),
-      };
+        if (!dbUser) {
+          throw new GraphQLError(
+            "User not found. Please ensure the user ID is correct.",
+            {
+              extensions: {
+                code: "BAD_USER_INPUT",
+                status: 404,
+              },
+            },
+          );
+        }
+
+        return {
+          ...dbUser,
+          role: dbUser.role as Role,
+          emailVerified: dbUser.emailVerified
+            ? dbUser.emailVerified.toISOString()
+            : null,
+          createdAt: dbUser.createdAt.toISOString(),
+          updatedAt: dbUser.updatedAt.toISOString(),
+          accounts: dbUser.accounts.map((account) => ({
+            ...account,
+            createdAt: account.createdAt.toISOString(),
+            updatedAt: account.updatedAt.toISOString(),
+          })),
+        };
+      } catch (error) {
+        console.error("Error in 'me' resolver: ", error);
+        if (error instanceof GraphQLError) {
+          throw error; // throw GraphQLError instance as-is
+        }
+        throw new GraphQLError("Failed to fetch user data.", {
+          extensions: {
+            code: "INTERNAL_SERVER_ERROR",
+            status: 500,
+          },
+        });
+      }
     },
     getUserById: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const user = await dataSources.userAPI.getUserById(id);
         if (!user) {
-          throw new Error("User not found");
+          throw new GraphQLError("User not found.", {
+            extensions: {
+              code: "USER_NOT_FOUND",
+              status: 404,
+            },
+          });
         }
         return {
           ...user,
@@ -94,7 +112,17 @@ export const resolvers: Resolvers = {
           updatedAt: user.updatedAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to fetch user");
+        console.log("Error in getUserById resolver: ", error);
+        if (error instanceof GraphQLError) {
+          throw error; // throw GraphQLError instance as-is
+        }
+
+        throw new GraphQLError("Failed to fetch user.", {
+          extensions: {
+            code: "INTERNAL_SERVER_ERROR",
+            status: 500,
+          },
+        });
       }
     },
     getPostsByUserId: async (_, { id }: { id: string }, { dataSources }) => {
@@ -116,89 +144,165 @@ export const resolvers: Resolvers = {
       try {
         const comments = await dataSources.userAPI.getCommentsByUserId(id);
         if (!comments || comments.length === 0) {
-          throw new Error("No comments found for the user");
+          throw new GraphQLError("No posts found for the user", {
+            extensions: {
+              code: "NO_POSTS_FOUND",
+              status: 404,
+            },
+          });
         }
         return comments.map((comment) => ({
           ...comment,
           createdAt: comment.createdAt.toISOString(),
         }));
       } catch (error) {
-        throw new Error("Failed to fetch comments by user ID.");
+        if (error instanceof GraphQLError) {
+          throw error; // throw GraphQLError as is
+        }
+
+        throw new GraphQLError("Failed to fetch posts by user ID", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     getLikesByUserId: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const likes = await dataSources.userAPI.getLikesByUserId(id);
         if (!likes || likes.length === 0) {
-          throw new Error("No likes found for the user");
+          throw new GraphQLError("No likes found for the user", {
+            extensions: { code: "NO_LIKES_FOUND", status: 404 },
+          });
         }
         return likes.map((like) => ({
           ...like,
           createdAt: like.createdAt.toISOString(),
         }));
       } catch (error) {
-        throw new Error("Failed to fetch likes by user ID.");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch likes by user ID.", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     getMediaByUserId: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const media = await dataSources.userAPI.getMediaByUserId(id);
         if (!media || media.length === 0) {
-          throw new Error("No media found for this user");
+          throw new GraphQLError("No media found for this user", {
+            extensions: { code: "NO_MEDIA_FOUND", status: 404 },
+          });
         }
         return media;
       } catch (error) {
-        throw new Error("Failed to fetch media by user id");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+        throw new GraphQLError("Failed to fetch media by user ID", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     account: async (_, __, { dataSources, user }) => {
-      if (!user || !user.id) {
-        throw new Error("User is not authenticated or user ID is missing.");
-      }
-      const account = await dataSources.accountAPI.getAccountByUserId(user.id!);
+      try {
+        if (!user || !user.id) {
+          throw new GraphQLError("User is not authenticated", {
+            extensions: { code: "UNAUTHENTICATED", status: 401 },
+          });
+        }
+        const account = await dataSources.accountAPI.getAccountByUserId(
+          user.id!,
+        );
 
-      if (!account) {
-        throw new Error(`Account not found for user ID: ${user.id}`);
-      }
+        if (!account) {
+          throw new GraphQLError(`Account not found for user ID: ${user.id}`, {
+            extensions: { code: "ACCOUNT_NOT_FOUND", status: 404 },
+          });
+        }
 
-      return {
-        ...account,
-        createdAt: account.createdAt.toISOString(),
-        updatedAt: account.updatedAt.toISOString(),
-      };
+        return {
+          ...account,
+          createdAt: account.createdAt.toISOString(),
+          updatedAt: account.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch account information", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
+      }
     },
     category: async (_, { id }: { id: string }, { dataSources }) => {
-      // fetch category by id
-      const category = await dataSources.categoryAPI.getCategoryById(id);
+      try {
+        const category = await dataSources.categoryAPI.getCategoryById(id);
+        if (!category) {
+          throw new GraphQLError(`Category with ID ${id} not found.`, {
+            extensions: { code: "CATEGORY_NOT_FOUND", status: 404 },
+          });
+        }
 
-      if (!category) {
-        throw new Error(`Category with ID ${id} not found.`);
+        return category;
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch category", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
-
-      return category;
     },
     categories: async (_, __, { dataSources }) => {
-      // fetch all categories
-      return await dataSources.categoryAPI.getCategories();
+      try {
+        const categories = await dataSources.categoryAPI.getCategories();
+        if (!categories || categories.length === 0) {
+          throw new GraphQLError("No categories found.", {
+            extensions: { code: "CATEGORIES_NOT_FOUND", status: 404 },
+          });
+        }
+        return categories;
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch categories", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
+      }
     },
     comment: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const comment = await dataSources.commentAPI.getCommentById(id);
 
         if (!comment) {
-          throw new Error(`Comment with ID ${id} not found`);
+          throw new GraphQLError(`Comment with ID ${id} not found`, {
+            extensions: { code: "COMMENT_NOT_FOUND", status: 404 },
+          });
         }
 
         return { ...comment, createdAt: comment.createdAt.toISOString() };
       } catch (error) {
-        throw new Error("An error occured");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+        throw new GraphQLError("Failed to fetch comment", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     post: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const post = await dataSources.postAPI.getPostById(id);
         if (!post) {
-          throw new Error(`Post with ID ${id} not found`);
+          throw new GraphQLError(`Post with ID ${id} not found`, {
+            extensions: { code: "POST_NOT_FOUND", status: 404 },
+          });
         }
         return {
           ...post,
@@ -206,19 +310,35 @@ export const resolvers: Resolvers = {
           updatedAt: post.updatedAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to fetch post");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch post", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     posts: async (_, __, { dataSources }) => {
       try {
         const posts = await dataSources.postAPI.getAllPosts();
+        if (!posts || posts.length === 0) {
+          throw new GraphQLError("No posts found", {
+            extensions: { code: "POSTS_NOT_FOUND", status: 404 },
+          });
+        }
         return posts.map((post) => ({
           ...post,
           createdAt: post.createdAt.toISOString(),
           updatedAt: post.createdAt.toISOString(),
         }));
       } catch (error) {
-        throw new Error("Failed to fetch results");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+        throw new GraphQLError("Failed to fetch posts", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     getPostCategories: async (
@@ -229,42 +349,102 @@ export const resolvers: Resolvers = {
       try {
         const postCategories =
           await dataSources.postCategoryAPI.getPostCategories(postId);
-        if (!postCategories.length) {
-          throw new Error("No categories found for the specified post");
+        if (!postCategories || postCategories.length === 0) {
+          throw new GraphQLError("No categories found for the specified post", {
+            extensions: { code: "CATEGORIES_NOT_FOUND", status: 404 },
+          });
         }
         return postCategories;
       } catch (error) {
-        throw new Error("Failed to fetch post categories");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch post categories", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     getPostTags: async (_, { postId }: { postId: string }, { dataSources }) => {
-      return await dataSources.postTagAPI.getPostTags(postId);
+      try {
+        const postTags = await dataSources.postTagAPI.getPostTags(postId);
+
+        if (!postTags || postTags.length === 0) {
+          throw new GraphQLError("No tags for the specified user", {
+            extensions: { code: "TAGS_NOT_FOUND", status: 404 },
+          });
+        }
+
+        return postTags;
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch post tags", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
+      }
     },
     getTagById: async (_, { tagId }: { tagId: string }, { dataSources }) => {
       try {
         const tag = await dataSources.tagAPI.getTagById(tagId);
         if (!tag) {
-          throw new Error(`Tag with ID ${tagId} not found.`);
+          throw new GraphQLError(`Tag with ID ${tagId} not found`, {
+            extensions: { code: "TAG_NOT_FOUND", status: 404 },
+          });
         }
         return tag;
       } catch (error) {
-        throw new Error("Failed to fetch tag by ID");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch tag by ID", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
     tags: async (_, __, { dataSources }) => {
       try {
-        return await dataSources.tagAPI.getTags();
+        const tags = await dataSources.tagAPI.getTags();
+
+        if (!tags || tags.length === 0) {
+          throw new GraphQLError("No tags found", {
+            extensions: { code: "TAGS_NOT_FOUND", status: 404 },
+          });
+        }
+
+        return tags;
       } catch (error) {
-        throw new Error("Failed to fetch tags");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch tags", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
   },
   Tag: {
     posts: async (tag, _, { dataSources }) => {
       try {
-        return await dataSources.postTagAPI.getPostTagsByTagId(tag.id);
+        const posts = await dataSources.postTagAPI.getPostTagsByTagId(tag.id);
+        if (!posts || posts.length === 0) {
+          throw new GraphQLError(`No posts found for tag with ID ${tag.id}`, {
+            extensions: { code: "POSTS_NOT_FOUND", status: 404 },
+          });
+        }
+        return posts;
       } catch (error) {
-        return [];
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+
+        throw new GraphQLError("Failed to fetch posts.", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
   },
@@ -272,9 +452,23 @@ export const resolvers: Resolvers = {
     media: async (parent, _, { dataSources }) => {
       try {
         const media = await dataSources.mediaAPI.getMediaByUserId(parent.id);
+
+        if (!media || media.length === 0) {
+          throw new GraphQLError(
+            `No media found for user with ID ${parent.id}`,
+            {
+              extensions: { code: "MEDIA_NOT_FOUND", status: 404 },
+            },
+          );
+        }
         return media;
       } catch (error) {
-        throw new Error("Failed to fetch media for user");
+        if (error instanceof GraphQLError) {
+          throw error; // throw as is
+        }
+        throw new GraphQLError("Failed to fetch media for user", {
+          extensions: { code: "INTERNAL_SERVER_ERROR", status: 500 },
+        });
       }
     },
   },
