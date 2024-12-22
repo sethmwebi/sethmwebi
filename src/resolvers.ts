@@ -478,200 +478,271 @@ export const resolvers: Resolvers = {
       { data }: { data: SanitizedRegisterUserInput },
       { db },
     ) => {
-      const {
-        email,
-        name,
-        password,
-        provider = "local",
-        type = "credentials",
-      } = RegisterSchema.parse(data);
-      const existingUser = await db.user.findUnique({ where: { email } });
-      if (existingUser) {
-        throw new Error("Email already in use");
-      }
-
-      const hashedPassword = await hash(password, 10);
-
-      const newUser = await db.user.create({
-        data: {
-          name,
+      try {
+        const {
           email,
-          role: "USER",
-          accounts: {
-            create: {
-              type,
-              provider,
-              providerAccountId: email,
-              access_token: hashedPassword,
+          name,
+          password,
+          provider = "local",
+          type = "credentials",
+        } = RegisterSchema.parse(data);
+        const existingUser = await db.user.findUnique({ where: { email } });
+        if (existingUser) {
+          throw new GraphQLError("Email already in use", {
+            extensions: { code: "EMAIL_IN_USE", status: 409 },
+          });
+        }
+
+        const hashedPassword = await hash(password, 10);
+
+        const newUser = await db.user.create({
+          data: {
+            name,
+            email,
+            role: "USER",
+            accounts: {
+              create: {
+                type,
+                provider,
+                providerAccountId: email,
+                access_token: hashedPassword,
+              },
             },
           },
-        },
-        include: {
-          accounts: true,
-        },
-      });
+          include: {
+            accounts: true,
+          },
+        });
 
-      const token = generateToken(newUser);
-      const refreshToken = generateRefreshToken(newUser);
+        const token = generateToken(newUser);
+        const refreshToken = generateRefreshToken(newUser);
 
-      return {
-        token,
-        refreshToken,
-        user: {
-          ...newUser,
-          role: newUser.role as Role,
-          emailVerified: newUser.emailVerified
-            ? newUser.emailVerified.toISOString() // Convert Date to String
-            : null,
-          createdAt: newUser.createdAt.toISOString(),
-          updatedAt: newUser.updatedAt.toISOString(),
-          accounts: newUser.accounts.map((account) => ({
-            ...account,
-            createdAt: account.createdAt.toISOString(),
-            updatedAt: account.updatedAt.toISOString(),
-          })),
-        },
-      };
+        return {
+          token,
+          refreshToken,
+          user: {
+            ...newUser,
+            role: newUser.role as Role,
+            emailVerified: newUser.emailVerified
+              ? newUser.emailVerified.toISOString() // Convert Date to String
+              : null,
+            createdAt: newUser.createdAt.toISOString(),
+            updatedAt: newUser.updatedAt.toISOString(),
+            accounts: newUser.accounts.map((account) => ({
+              ...account,
+              createdAt: account.createdAt.toISOString(),
+              updatedAt: account.updatedAt.toISOString(),
+            })),
+          },
+        };
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to register user", {
+          extensions: {
+            code: "REGISTRATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
+      }
     },
     login: async (_, { data }: { data: SanitizedLoginUserInput }, { db }) => {
-      const { email, password } = LoginSchema.parse(data);
-      const user = await db.user.findUnique({
-        where: { email },
-        include: { accounts: true },
-      });
+      try {
+        // Validate input using zod
+        const { email, password } = LoginSchema.parse(data);
 
-      if (!user || !user.accounts.length) {
-        throw new Error("Invalid email or password");
+        // Fecth user and related accounts
+        const user = await db.user.findUnique({
+          where: { email },
+          include: { accounts: true },
+        });
+
+        // validate user existence and associated accounts
+        if (!user || !user.accounts.length) {
+          throw new GraphQLError("Invalid email or password", {
+            extensions: { code: "INVALID_CREDENTIALS", status: 401 },
+          });
+        }
+
+        // Find credentials account
+        const credentialsAccount = user.accounts.find(
+          (account) =>
+            account.type === "credentials" && account.provider === "local",
+        );
+
+        if (!credentialsAccount) {
+          throw new GraphQLError("Invalid email or password", {
+            extensions: { code: "INVALID_CREDENTIALS", status: 401 },
+          });
+        }
+
+        // Verify password
+        const validPassword = await compare(
+          password,
+          credentialsAccount.access_token || "",
+        );
+
+        if (!validPassword) {
+          throw new GraphQLError("Invalid email or password", {
+            extensions: { code: "INVALID_CREDENTIALS", status: 401 },
+          });
+        }
+
+        const token = generateToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        return {
+          token,
+          refreshToken,
+          user: {
+            ...user,
+            role: user.role as Role,
+            emailVerified: user.emailVerified
+              ? user.emailVerified.toISOString()
+              : null,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            accounts: user.accounts.map((account) => ({
+              ...account,
+              createdAt: account.createdAt.toISOString(),
+              updatedAt: account.updatedAt.toISOString(),
+            })),
+          },
+        };
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to log in", {
+          extensions: {
+            code: "LOGIN_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
-
-      const credentialsAccount = user.accounts.find(
-        (account) =>
-          account.type === "credentials" && account.provider === "local",
-      );
-
-      if (!credentialsAccount) {
-        throw new Error("Invalid email or password");
-      }
-
-      const validPassword = await compare(
-        password,
-        credentialsAccount.access_token || "",
-      );
-
-      if (!validPassword) {
-        throw new Error("Invalid email or password");
-      }
-
-      const token = generateToken(user);
-      const refreshToken = generateRefreshToken(user);
-
-      return {
-        token,
-        refreshToken,
-        user: {
-          ...user,
-          role: user.role as Role,
-          emailVerified: user.emailVerified
-            ? user.emailVerified.toISOString()
-            : null,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
-          accounts: user.accounts.map((account) => ({
-            ...account,
-            createdAt: account.createdAt.toISOString(),
-            updatedAt: account.updatedAt.toISOString(),
-          })),
-        },
-      };
     },
     loginWithGoogle: async (_, { accessToken }, { db }) => {
-      // Authenticate using passport with the "google-token" strategy
-      const user = await new Promise<User>((resolve, reject) => {
-        passport.authenticate(
-          "google-token",
-          { session: false },
-          async (err: any, user: User) => {
-            if (err || !user) {
-              return reject(err || new Error("Google login failed"));
-            }
+      try {
+        // Authenticate user using passport with "google-token" strategy
+        const user = await new Promise<User>((resolve, reject) => {
+          passport.authenticate(
+            "google-token",
+            { session: false },
+            async (err: any, user: User) => {
+              try {
+                if (err || !user) {
+                  throw new GraphQLError("Google login failed", {
+                    extensions: { code: "UNAUTHENTICATED", status: 401 },
+                  });
+                }
 
-            // check if user exists in the database
-            let existingUser = await db.user.findUnique({
-              where: { email: user.email },
-            });
+                // Check if the user exists in the database
+                let existingUser = await db.user.findUnique({
+                  where: { email: user.email },
+                });
 
-            if (!existingUser) {
-              // if user doesn't exist, create a new one
-              existingUser = await db.user.create({
-                data: {
-                  name: user.name,
-                  email: user.email,
-                  image: user.image,
-                  role: "USER",
-                },
-              });
-            }
+                if (!existingUser) {
+                  // If the user doesn't exist, create a new one
+                  existingUser = await db.user.create({
+                    data: {
+                      name: user.name,
+                      email: user.email,
+                      image: user.image,
+                      role: "USER",
+                    },
+                  });
+                }
 
-            // Upsert account for the user and provider
-            await db.account.upsert({
-              where: {
-                provider_providerAccountId: {
-                  provider: "google",
-                  providerAccountId: user.id,
-                },
-              },
-              create: {
-                type: "oauth",
-                provider: "google",
-                providerAccountId: user.id,
-                access_token: generateToken(existingUser),
-                refresh_token: generateRefreshToken(existingUser),
-                token_type: "Bearer",
-                expires_at: Math.floor(Date.now() / 1000) + 3600,
-                scope: "profile email",
-                user: {
-                  connect: { id: existingUser.id },
-                },
-              },
-              update: {
-                access_token: generateToken(existingUser),
-                refresh_token: generateRefreshToken(existingUser),
-                expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 7,
-              },
-            });
+                // Upsert account for the user and provider
+                await db.account.upsert({
+                  where: {
+                    provider_providerAccountId: {
+                      provider: "google",
+                      providerAccountId: user.id,
+                    },
+                  },
+                  create: {
+                    type: "oauth",
+                    provider: "google",
+                    providerAccountId: user.id,
+                    access_token: generateToken(existingUser),
+                    refresh_token: generateRefreshToken(existingUser),
+                    token_type: "Bearer",
+                    expires_at: Math.floor(Date.now() / 1000) + 3600,
+                    scope: "profile email",
+                    user: {
+                      connect: { id: existingUser.id },
+                    },
+                  },
+                  update: {
+                    access_token: generateToken(existingUser),
+                    refresh_token: generateRefreshToken(existingUser),
+                    expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 7,
+                  },
+                });
 
-            resolve(existingUser);
+                resolve(existingUser);
+              } catch (error) {
+                reject(error);
+              }
+            },
+          )({ headers: { authorization: `Bearer ${accessToken}` } });
+        });
+
+        // Generate access and refresh tokens
+        const token = generateToken({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        });
+
+        const refreshToken = generateRefreshToken({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        });
+
+        // Return the AuthPayload
+        return {
+          token,
+          refreshToken,
+          user: {
+            ...user,
+            role: user.role as Role,
+            emailVerified: user.emailVerified
+              ? user.emailVerified.toISOString()
+              : null,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
           },
-        )({ headers: { authorization: `Bearer ${accessToken}` } });
-      });
+        };
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error; // Re-throw GraphQLError for centralized handling
+        }
 
-      // generate access and refresh tokens
-      const token = generateToken({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      });
-
-      const refreshToken = generateRefreshToken({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      });
-
-      // return the AuthPayload
-      return {
-        token,
-        refreshToken,
-        user: {
-          ...user,
-          role: user.role as Role,
-          emailVerified: user.emailVerified
-            ? user.emailVerified.toISOString()
-            : null,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
-        },
-      };
+        // Handle unexpected errors
+        throw new GraphQLError("Failed to log in with Google", {
+          extensions: {
+            code: "LOGIN_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
+      }
     },
     createUser: async (
       _,
@@ -700,7 +771,21 @@ export const resolvers: Resolvers = {
           updatedAt: newUser.updatedAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to create user");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to register user", {
+          extensions: {
+            code: "REGISTRATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     updateUserProfile: async (
@@ -725,7 +810,9 @@ export const resolvers: Resolvers = {
           sanitizedData,
         );
         if (!updatedUser) {
-          throw new Error("User not found!");
+          throw new GraphQLError("User not found", {
+            extensions: { code: "USER_NOT_FOUND", status: 404 },
+          });
         }
         return {
           ...updatedUser,
@@ -737,18 +824,51 @@ export const resolvers: Resolvers = {
           updatedAt: updatedUser.updatedAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to update user profile.");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to update user profile", {
+          extensions: {
+            code: "UPDATE_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     deleteUser: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const success = await dataSources.userAPI.deleteUser(id);
         if (!success) {
-          throw new Error("user deletion failed.");
+          throw new GraphQLError("User deletion failed", {
+            extensions: {
+              code: "DELETION_FAILED",
+              status: 500,
+            },
+          });
         }
         return success;
       } catch (error) {
-        throw new Error("Failed to delete user");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to delete user", {
+          extensions: {
+            code: "INTERNAL_SERVER_ERROR",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createPost: async (
@@ -768,7 +888,21 @@ export const resolvers: Resolvers = {
           updatedAt: post.updatedAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to create post");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create post", {
+          extensions: {
+            code: "POST_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     updatePost: async (
@@ -779,7 +913,12 @@ export const resolvers: Resolvers = {
       try {
         const updatedPost = await dataSources.postAPI.updatePost(id, data);
         if (!updatedPost) {
-          throw new Error(`Failed to update post with ID ${id}`);
+          throw new GraphQLError(`Post with ID ${id} not found`, {
+            extensions: {
+              code: "POST_NOT_FOUND",
+              status: 404,
+            },
+          });
         }
         // format dates
         return {
@@ -788,18 +927,47 @@ export const resolvers: Resolvers = {
           updatedAt: updatedPost.updatedAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to update the post");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to update the post", {
+          extensions: {
+            code: "POST_UPDATE_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     deletePost: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const isDeleted = await dataSources.postAPI.deletePost(id);
         if (!isDeleted) {
-          throw new Error("Deletion failed");
+          throw new GraphQLError(`Failed to delete post with ID ${id}`, {
+            extensions: {
+              code: "POST_DELETION_FAILED",
+              status: 404,
+            },
+          });
         }
         return true;
       } catch (error) {
-        throw new Error("Failed to delete post");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to delete post", {
+          extensions: {
+            code: "POST_DELETION_ERROR",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createPostCategory: async (
@@ -808,13 +976,29 @@ export const resolvers: Resolvers = {
       { dataSources },
     ) => {
       try {
+        // validate and sanitize the input
         const sanitizedData = CreatePostCategorySchema.parse(data);
+
         return await dataSources.postCategoryAPI.createPostCategory(
           sanitizedData.postId,
           sanitizedData.categoryId,
         );
       } catch (error) {
-        throw new Error("Failed to create post category");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create post category", {
+          extensions: {
+            code: "POST_CATEGORY_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createComment: async (
@@ -831,7 +1015,21 @@ export const resolvers: Resolvers = {
           createdAt: comment.createdAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to create post");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create comment", {
+          extensions: {
+            code: "COMMENT_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     deleteComment: async (_, { id }: { id: string }, { dataSources }) => {
@@ -839,11 +1037,30 @@ export const resolvers: Resolvers = {
         // delete the comment by id
         const success = await dataSources.commentAPI.deleteComment(id);
         if (!success) {
-          throw new Error(`Failed to delete comment with ID ${id}`);
+          throw new GraphQLError(`Comment with ID ${id} not found`, {
+            extensions: {
+              code: "COMMENT_NOT_FOUND",
+              status: 404,
+            },
+          });
         }
         return success;
       } catch (error) {
-        throw new Error("Failed to delete comment");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to delete comment", {
+          extensions: {
+            code: "COMMENT_DELETION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createLike: async (
@@ -859,19 +1076,44 @@ export const resolvers: Resolvers = {
           createdAt: like.createdAt.toISOString(),
         };
       } catch (error) {
-        throw new Error("Failed to create like");
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create like", {
+          extensions: {
+            code: "LIKE_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     deleteLike: async (_, { id }: { id: string }, { dataSources }) => {
       try {
         const success = await dataSources.likeAPI.deleteLike(id);
         if (!success) {
-          throw new Error(`Failed to delete like with ID ${id}`);
+          throw new GraphQLError(`Like with ID ${id} not found`, {
+            extensions: {
+              code: "LIKE_NOT_FOUND",
+              status: 404,
+            },
+          });
         }
 
         return success;
       } catch (error) {
-        throw new Error("Failed to delete like");
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to delete like", {
+          extensions: {
+            code: "LIKE_DELETION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createPostTag: async (
@@ -885,7 +1127,17 @@ export const resolvers: Resolvers = {
           await dataSources.postTagAPI.createPostTag(sanitizedData);
         return postTag;
       } catch (error) {
-        throw new Error("Failed to create post tag");
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create post tag", {
+          extensions: {
+            code: "POST_TAG_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createTag: async (
@@ -900,13 +1152,33 @@ export const resolvers: Resolvers = {
           sanitizedData.slug,
         );
         if (existingTag) {
-          throw new Error(
-            `A tag with slug "${sanitizedData.slug}" already exists.`,
+          throw new GraphQLError(
+            `A tag with slug "${sanitizedData.slug}" already exists`,
+            {
+              extensions: {
+                code: "TAG_ALREADY_EXISTS",
+                status: 400,
+              },
+            },
           );
         }
         return await dataSources.tagAPI.createTag(data);
       } catch (error) {
-        throw new Error("Failed to create tag");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create tag", {
+          extensions: {
+            code: "TAG_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
     createMedia: async (
@@ -919,7 +1191,21 @@ export const resolvers: Resolvers = {
         const media = await dataSources.mediaAPI.createMedia(sanitizedData);
         return media;
       } catch (error) {
-        throw new Error("Failed to create media");
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+
+        if (error.name === "ZodError") {
+          throw error;
+        }
+
+        throw new GraphQLError("Failed to create media", {
+          extensions: {
+            code: "MEDIA_CREATION_FAILED",
+            status: 500,
+            originalError: error.message,
+          },
+        });
       }
     },
   },
